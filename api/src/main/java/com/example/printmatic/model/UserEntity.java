@@ -35,7 +35,7 @@ public class UserEntity {
     @Column(unique = true)
     private String phoneNumber;
 
-    @Column
+    @Column(nullable = false)
     private BigDecimal balance;
 
     @ManyToMany
