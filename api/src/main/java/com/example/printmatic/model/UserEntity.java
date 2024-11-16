@@ -38,6 +38,9 @@ public class UserEntity {
     @Column(nullable = false)
     private BigDecimal balance;
 
+    @OneToMany(mappedBy = "owner")
+    private List<OrderEntity> orders;
+
     @ManyToMany
     @JoinTable(name = "users_roles",
     joinColumns = @JoinColumn(name = "users_id"),
