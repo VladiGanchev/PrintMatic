@@ -12,6 +12,6 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/order")
 public class OrderController {
 
-    @PostMapping("/create")
-    private ResponseEntity<MessageResponseDTO> createOrder(@RequestBody OrderCreationDTO orderCreationDTO) {}
+    //@PostMapping("/create")
+    //private ResponseEntity<MessageResponseDTO> createOrder(@RequestBody OrderCreationDTO orderCreationDTO) {}
 }

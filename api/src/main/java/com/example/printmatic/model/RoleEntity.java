@@ -21,6 +21,6 @@ public class RoleEntity {
     @Column
     private String name;
 
-    @ManyToMany(mappedBy = "roles")
+    @ManyToMany(mappedBy = "roles", fetch = FetchType.LAZY)
     private List<UserEntity> users;
 }

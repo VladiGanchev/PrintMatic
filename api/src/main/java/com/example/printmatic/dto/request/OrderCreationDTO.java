@@ -34,4 +34,6 @@ public class OrderCreationDTO {
     private String additionalInfo;
 
     private LocalDateTime deadline;
+
+    private String fileUrl;
 }

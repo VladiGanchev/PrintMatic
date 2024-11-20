@@ -41,7 +41,7 @@ public class UserEntity {
     @OneToMany(mappedBy = "owner")
     private List<OrderEntity> orders;
 
-    @ManyToMany
+    @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "users_roles",
     joinColumns = @JoinColumn(name = "users_id"),
     inverseJoinColumns = @JoinColumn(name = "roles_id"))
