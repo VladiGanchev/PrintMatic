@@ -2,12 +2,17 @@ package com.example.printmatic.controler;
 
 import com.example.printmatic.dto.response.MessageResponseDTO;
 import com.example.printmatic.service.GoogleCloudStorageService;
-import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.http.ResponseEntity;
+import com.example.printmatic.enums.RoleEnum;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.web.multipart.MultipartFile;
 
 @RestController
-@RequestMapping("/upload")
+@RequestMapping("/api/storage")
 public class FileUploadController {
     private final GoogleCloudStorageService gcsService;
 
@@ -15,14 +20,42 @@ public class FileUploadController {
         this.gcsService = gcsService;
     }
 
-    @PostMapping
-    private ResponseEntity<MessageResponseDTO> uploadFile(@RequestParam("file") MultipartFile file) {
+    @PostMapping("/upload")
+    public ResponseEntity<MessageResponseDTO> uploadFile(@RequestParam("file") MultipartFile file) {
         try {
-            String fileURL = gcsService.uploadFile(file);
-            return ResponseEntity.ok(new MessageResponseDTO(200, fileURL));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(new MessageResponseDTO(400, "could not upload file"));
-        }
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            String email = auth.getName();
 
+            String blobName = gcsService.uploadFile(file, email);
+            return ResponseEntity.ok(new MessageResponseDTO(200, blobName));
+
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(new MessageResponseDTO(400, "Could not upload file: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/download")
+    public ResponseEntity<MessageResponseDTO> getDownloadUrl(@RequestParam("blobName") String blobName) {
+        try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+
+            boolean isEmployeeOrAdmin = auth.getAuthorities().stream()
+                    .map(GrantedAuthority::getAuthority)
+                    .peek(role -> System.out.println("Checking role: " + role))
+                    .anyMatch(role -> role.equals("ADMIN") || role.equals("EMPLOYEE"));
+
+            if (!isEmployeeOrAdmin) {
+                return ResponseEntity.status(403)
+                        .body(new MessageResponseDTO(403, "Access denied: Employee or Admin role required"));
+            }
+
+            String downloadUrl = gcsService.generateDownloadUrl(blobName);
+            return ResponseEntity.ok(new MessageResponseDTO(200, downloadUrl));
+
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(new MessageResponseDTO(400, "Could not generate download URL: " + e.getMessage()));
+        }
     }
 }
