@@ -1,6 +1,8 @@
 package com.example.printmatic.controler;
 
+import com.example.printmatic.dto.response.FileUploadResponseDTO;
 import com.example.printmatic.dto.response.MessageResponseDTO;
+import com.example.printmatic.dto.response.UploadResultDTO;
 import com.example.printmatic.service.GoogleCloudStorageService;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -21,17 +23,31 @@ public class FileUploadController {
     }
 
     @PostMapping("/upload")
-    public ResponseEntity<MessageResponseDTO> uploadFile(@RequestParam("file") MultipartFile file) {
+    public ResponseEntity<FileUploadResponseDTO> uploadFile(@RequestParam("file") MultipartFile file) {
         try {
             Authentication auth = SecurityContextHolder.getContext().getAuthentication();
             String email = auth.getName();
 
-            String blobName = gcsService.uploadFile(file, email);
-            return ResponseEntity.ok(new MessageResponseDTO(200, blobName));
+            UploadResultDTO result = gcsService.uploadFile(file, email);
+            return ResponseEntity.ok(new FileUploadResponseDTO(
+                    200,
+                    "File uploaded successfully",
+                    result.blobName(),
+                    result.fileAnalysisResult().totalPages(),
+                    result.fileAnalysisResult().colorfulPages(),
+                    result.fileAnalysisResult().grayscalePages()
+            ));
 
         } catch (Exception e) {
             return ResponseEntity.badRequest()
-                    .body(new MessageResponseDTO(400, "Could not upload file: " + e.getMessage()));
+                    .body(new FileUploadResponseDTO(
+                            400,
+                            "Could not upload file: " + e.getMessage(),
+                            null,
+                            0,
+                            0,
+                            0
+                    ));
         }
     }
 

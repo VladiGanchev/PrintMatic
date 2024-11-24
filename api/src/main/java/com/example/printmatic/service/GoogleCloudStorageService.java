@@ -1,5 +1,7 @@
 package com.example.printmatic.service;
 
+import com.example.printmatic.dto.response.FileAnalysisResultDTO;
+import com.example.printmatic.dto.response.UploadResultDTO;
 import com.google.auth.oauth2.ServiceAccountCredentials;
 import com.google.cloud.storage.*;
 import org.springframework.beans.factory.annotation.Value;
@@ -14,13 +16,16 @@ public class GoogleCloudStorageService {
     private final Storage clientStorage;
     private final Storage employeeStorage;
     private final String bucketName;
+    private final DocumentAnalysisService documentAnalysisService;
 
     public GoogleCloudStorageService(
             @Value("${gcp.bucket.name}") String bucketName,
             @Value("${gcp.client.service-account}") String clientServiceAccountPath,
-            @Value("${gcp.employee.service-account}") String employeeServiceAccountPath
+            @Value("${gcp.employee.service-account}") String employeeServiceAccountPath,
+            DocumentAnalysisService documentAnalysisService
     ) throws IOException {
         this.bucketName = bucketName;
+        this.documentAnalysisService = documentAnalysisService;
 
         // Initialize client storage (for uploads)
         ServiceAccountCredentials clientCredentials = ServiceAccountCredentials
@@ -39,7 +44,9 @@ public class GoogleCloudStorageService {
                 .getService();
     }
 
-    public String uploadFile(MultipartFile file, String userEmail) throws IOException {
+    public UploadResultDTO uploadFile(MultipartFile file, String userEmail) throws IOException {
+        FileAnalysisResultDTO analysisResultDTO = documentAnalysisService.analyzeDocument(file);
+
         String blobName = String.format(
                 "orders/%s/%d-%s",
                 userEmail,
@@ -52,7 +59,10 @@ public class GoogleCloudStorageService {
                 .build();
 
         clientStorage.create(blobInfo, file.getBytes());
-        return blobName;
+        return new UploadResultDTO(
+                blobName,
+                analysisResultDTO
+        );
     }
 
     public String generateDownloadUrl(String blobName) {
