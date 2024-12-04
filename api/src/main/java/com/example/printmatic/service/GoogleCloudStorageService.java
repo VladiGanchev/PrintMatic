@@ -44,8 +44,9 @@ public class GoogleCloudStorageService {
                 .getService();
     }
 
-    public UploadResultDTO uploadFile(MultipartFile file, String userEmail) throws IOException {
-        FileAnalysisResultDTO analysisResultDTO = documentAnalysisService.analyzeDocument(file);
+    public UploadResultDTO uploadFile(MultipartFile file, String userEmail, boolean grayscale) throws IOException {
+
+        FileAnalysisResultDTO analysisResultDTO = documentAnalysisService.analyzeDocument(file,grayscale);
 
         String blobName = String.format(
                 "orders/%s/%d-%s",

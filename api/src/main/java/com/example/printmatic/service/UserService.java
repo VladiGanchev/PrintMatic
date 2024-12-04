@@ -2,7 +2,7 @@ package com.example.printmatic.service;
 
 import com.example.printmatic.enums.RoleEnum;
 import com.example.printmatic.model.RoleEntity;
-import com.example.printmatic.repository.RoleRepositoty;
+import com.example.printmatic.repository.RoleRepository;
 import com.example.printmatic.repository.UserRepository;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
@@ -23,12 +23,12 @@ public class UserService {
     private final UserRepository userRepository;
     private final ModelMapper modelMapper;
     private final PasswordEncoder passwordEncoder;
-    private final RoleRepositoty roleRepositoty;
+    private final RoleRepository roleRepositoty;
 
     public UserService(
             UserRepository userRepository,
             ModelMapper modelMapper,
-            PasswordEncoder passwordEncoder, RoleRepositoty roleRepositoty) {
+            PasswordEncoder passwordEncoder, RoleRepository roleRepositoty) {
         this.userRepository = userRepository;
         this.modelMapper = modelMapper;
         this.passwordEncoder = passwordEncoder;

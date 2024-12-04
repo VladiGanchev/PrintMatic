@@ -20,10 +20,13 @@ public class OrderCreationDTO {
 
     @NotNull(message = "Number of copies can't be null")
     @Min(value = 1, message = "At least one copy is required.")
-    private Integer copies;
+    private int copies;
 
     @NotNull(message = "Color mode must be specified.")
     private boolean grayscale;
+
+    @NotNull(message = "Double sided or not must be specified.")
+    private boolean doubleSided;
 
     @NotNull(message = "Page size is required.")
     private PageSize pageSize;
@@ -35,5 +38,15 @@ public class OrderCreationDTO {
 
     private LocalDateTime deadline;
 
+    @NotNull
     private String fileUrl;
+
+    @NotNull
+    private int totalPages;
+
+    @NotNull
+    private int colorfulPages;
+
+    @NotNull
+    private int grayscalePages;
 }

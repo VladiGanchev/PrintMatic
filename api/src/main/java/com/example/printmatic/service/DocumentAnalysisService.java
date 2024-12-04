@@ -4,11 +4,8 @@ import com.example.printmatic.dto.response.FileAnalysisResultDTO;
 import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.rendering.PDFRenderer;
-import org.apache.poi.xwpf.converter.pdf.PdfConverter;
-import org.apache.poi.xwpf.converter.pdf.PdfOptions;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-import org.apache.poi.xwpf.usermodel.XWPFDocument;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -20,14 +17,12 @@ import java.io.InputStream;
 @Service
 public class DocumentAnalysisService {
 
-    public FileAnalysisResultDTO analyzeDocument(MultipartFile file) throws IOException {
+    public FileAnalysisResultDTO analyzeDocument(MultipartFile file, boolean grayscale) throws IOException {
         String originalFileName = file.getOriginalFilename();
 
-        if (isWordDocument(originalFileName)) {
-            byte[] pdfBytes = convertWordToPdf(file.getInputStream());
-            return analyzePdf(pdfBytes);
-        } else if (isPdf(originalFileName)) {
-            return analyzePdf(file.getBytes());
+
+        if (isPdf(originalFileName)) {
+            return analyzePdf(file.getBytes(), grayscale);
         } else if (isImage(originalFileName)) {
             return analyzeImage(file);
         } else {
@@ -46,23 +41,21 @@ public class DocumentAnalysisService {
         );
     }
 
-    private byte[] convertWordToPdf(InputStream inputStream) throws IOException {
-        try (XWPFDocument document = new XWPFDocument(inputStream);
-            ByteArrayOutputStream pdfOutputStream = new ByteArrayOutputStream()) {
-            PdfOptions options = PdfOptions.create();
-            PdfConverter.getInstance().convert(document, pdfOutputStream, options);
 
-            return pdfOutputStream.toByteArray();
-        }
-    }
-
-    private FileAnalysisResultDTO analyzePdf(byte[] pdfBytes) throws IOException {
+    private FileAnalysisResultDTO analyzePdf(byte[] pdfBytes, boolean grayscale) throws IOException {
         int colorPages = 0;
         int totalPages;
 
         try(PDDocument document = Loader.loadPDF(pdfBytes)) {
             PDFRenderer renderer = new PDFRenderer(document);
             totalPages = document.getNumberOfPages();
+            if(grayscale){
+                return new FileAnalysisResultDTO(
+                        totalPages,
+                        0,
+                        totalPages
+                );
+            }
 
             for(int currentPage = 0; currentPage < totalPages; currentPage++) {
                 BufferedImage image = renderer.renderImageWithDPI(currentPage, 72);

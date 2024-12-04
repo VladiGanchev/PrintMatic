@@ -35,6 +35,9 @@ public class OrderEntity {
     @Column(nullable = false)
     private boolean grayscale;
 
+    @Column(nullable = false)
+    private boolean doubleSided;
+
     private Integer colorfulPages;
 
     private Integer grayscalePages;
