@@ -28,9 +28,11 @@ public class SecurityConfiguration {
                                 "/v3/api-docs/**",
                                 "/swagger-resources/**",
                                 "/swagger-ui/**",
-                                "user/register",
-                                "user/login"
+                                "/api/user/register",
+                                "/api/user/login"
                         ).permitAll()
+                        .requestMatchers("/api/storage/download/**").hasAnyAuthority("EMPLOYEE","ADMIN")
+                        .requestMatchers("/api/storage/upload").authenticated()
                         .anyRequest().authenticated()
         );
         http.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));

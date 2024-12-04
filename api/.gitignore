@@ -31,3 +31,8 @@ build/
 
 ### VS Code ###
 .vscode/
+
+# Ignore Google Cloud credentials
+src/main/resources/printmatic-7acbd23e6c01.json
+src/main/resources/printmatic-012243b6f35d.json
+src/main/resources/printmatic-8852542eb406.json
