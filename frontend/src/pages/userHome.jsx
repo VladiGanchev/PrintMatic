@@ -21,7 +21,7 @@ export default function UserHome() {
   });
 
   return (
-    <div className="w-screen h-screen flex flex-row">
+    <div className="w-screen h-screen flex flex-row hover:cursor-default">
       <HeaderUser />
       <div className="w-full h-screen flex flex-col p-12">
         <p className="text-5xl font-bold">Нова заявка</p>

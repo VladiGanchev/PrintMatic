@@ -23,9 +23,9 @@ export default function UserNotifications() {
   ];
 
   return (
-    <div className="w-screen h-screen flex flex-row">
+    <div className="w-screen h-screen flex flex-row hover:cursor-default">
       <HeaderUser />
-      <div className="w-full h-screen flex flex-col p-12">
+      <div className="w-full h-screen flex flex-col p-12 overflow-scroll">
         <p className="text-5xl font-bold">Известия</p>
         <div className="space-y-4 mt-8">
           {notifications.map((notification) => (

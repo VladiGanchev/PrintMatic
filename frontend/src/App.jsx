@@ -6,6 +6,8 @@ import Home from "./pages/home";
 import UserHome from "./pages/UserHome";
 import UserPayment from "./pages/userPayment";
 import UserNotifications from "./pages/userNotifications";
+import UserHistory from "./pages/userHistory";
+import UserHistoryDocument from "./pages/userHistoryDocument";
 
 function App() {
   return (
@@ -15,6 +17,8 @@ function App() {
       <Route path="/userHome" element={<UserHome />} />
       <Route path="/userPayment" element={<UserPayment />} />
       <Route path="/userNotifications" element={<UserNotifications />} />
+      <Route path="/userHistory" element={<UserHistory />} />
+      <Route path="/userHistoryDocument" element={<UserHistoryDocument />} />
     </Routes>
   );
 }
