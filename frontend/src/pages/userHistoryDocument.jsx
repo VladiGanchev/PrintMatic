@@ -6,7 +6,7 @@ import mammoth from "mammoth";
 import HeaderUser from "../components/headerUser";
 
 export default function UserHistoryDocument() {
-  const [isPdf, setIsPdf] = useState(true); // TODO: Check if document is PDF on load
+  const [isPdf] = useState(true); // TODO: Check if document is PDF on load
   const [docxContent, setDocxContent] = useState("");
   const filePath = isPdf ? "/sample.pdf" : "/sample.docx";
 
