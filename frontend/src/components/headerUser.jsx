@@ -19,7 +19,7 @@ export default function HeaderUser() {
         </div>
         <div className="flex flex-row gap-2 items-center">
           <FaBell className="text-white" />
-          <a className="text-white hover:underline" href="/userHistory">
+          <a className="text-white hover:underline" href="/userNotifications">
             Известия
           </a>
         </div>
