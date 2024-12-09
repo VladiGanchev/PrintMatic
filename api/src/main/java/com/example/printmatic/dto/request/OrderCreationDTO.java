@@ -1,5 +1,6 @@
 package com.example.printmatic.dto.request;
 
+import com.example.printmatic.enums.DeadlineEnum;
 import com.example.printmatic.enums.PageSize;
 import com.example.printmatic.enums.PaperType;
 import jakarta.validation.constraints.Min;
@@ -22,8 +23,6 @@ public class OrderCreationDTO {
     @Min(value = 1, message = "At least one copy is required.")
     private int copies;
 
-    @NotNull(message = "Color mode must be specified.")
-    private boolean grayscale;
 
     @NotNull(message = "Double sided or not must be specified.")
     private boolean doubleSided;
@@ -36,7 +35,8 @@ public class OrderCreationDTO {
 
     private String additionalInfo;
 
-    private LocalDateTime deadline;
+    @NotNull
+    private DeadlineEnum deadline;
 
     @NotNull
     private String fileUrl;

@@ -8,9 +8,12 @@ import jakarta.validation.constraints.Email;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 @Entity
 @Table(name = "orders")
@@ -32,8 +35,6 @@ public class OrderEntity {
     @Column(nullable = false)
     private Integer copies;
 
-    @Column(nullable = false)
-    private boolean grayscale;
 
     @Column(nullable = false)
     private boolean doubleSided;
@@ -67,9 +68,4 @@ public class OrderEntity {
     @ManyToOne
     @JoinColumn(name = "owner_id", nullable = false)
     private UserEntity owner;
-
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-    }
 }
