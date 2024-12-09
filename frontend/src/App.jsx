@@ -9,14 +9,16 @@ import UserNotifications from "./pages/userNotifications";
 import UserHistory from "./pages/userHistory";
 import UserHistoryDocument from "./pages/userHistoryDocument";
 import UserProfile from "./pages/userProfile";
+import LoginPage from "./pages/LoginPage"
 
 function App() {
   return (
     <Routes>
-      <Route path="/" element={<RegisterPage />} />
 
-      <Route path="/home" element={<Home />} />
+      <Route path="/" element={<Home />} />
 
+      <Route path="/register" element={<RegisterPage />} />
+      <Route path="/login" element={<LoginPage />}/>
       <Route path="/userHome" element={<UserHome />} />
       <Route path="/userPayment" element={<UserPayment />} />
       <Route path="/userNotifications" element={<UserNotifications />} />

@@ -1,5 +1,6 @@
 import Footer from "../components/footer";
 import HeaderHome from "../components/headerHome";
+import { useNavigate } from "react-router-dom";
 
 export default function Home() {
   return (

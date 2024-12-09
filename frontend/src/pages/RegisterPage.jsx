@@ -1,7 +1,9 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { registerUser, loginUser } from "../services/authService";
 
 const RegisterPage = () => {
+  let navigate = useNavigate()
   const [userData, setUserData] = useState({
     email: "",
     password: "",
@@ -30,7 +32,7 @@ const RegisterPage = () => {
     } catch (error) {
       console.error("Registration error: ", error);
       setErrorMessage(
-        error.response ? error.response.data.message : "Registration failed"
+        error.message ? error.message : "Registration failed"
       );
     }
   };
@@ -41,7 +43,7 @@ const RegisterPage = () => {
         <p className="text-lg">Register</p>
         <div className="flex text-s mb-6 space-x-2">
           <p className="text-gray-300">Already have an account?</p>
-          <p className="cursor-pointer hover:text-gray-300">Log in</p>
+          <p className="cursor-pointer hover:text-gray-300" onClick={()=>navigate("/login")}>Log in</p>
         </div>
         <div className="flex flex-row gap-x-8">
           <div className="flex flex-col w-full items-center text-gray-500 space-y-4 pt-6">

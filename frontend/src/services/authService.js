@@ -2,11 +2,13 @@ import api, {setAuthToken} from "./api";
 
 export const loginUser = async (credentials) =>{
     try{
-        const response = await api.post("/user/login", credentials);
-        
-        const{token} = response.data.token;
+        const response = await api.post("/api/user/login", credentials);
+        console.log('RESPONSE ' + response.data.token)
+        const{token} = response.data;
+        const{roles} = response.data;
         setAuthToken(token);
         localStorage.setItem('jwtToken', token);
+        localStorage.setItem('roles', roles);
         return response.data;
         
     }catch(error){
@@ -17,7 +19,7 @@ export const loginUser = async (credentials) =>{
 
 export const registerUser = async (userData) =>{
     try {
-            const response = await api.post("/user/register", userData);
+            const response = await api.post("/api/user/register", userData);
             return response.data;
 
     } catch (error) {
