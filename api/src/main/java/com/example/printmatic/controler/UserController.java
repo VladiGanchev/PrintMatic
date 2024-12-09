@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("/user/")
+@RequestMapping("api/user/")
 @Slf4j
 public class UserController {
     private final UserService userService;
@@ -43,7 +43,7 @@ public class UserController {
                                                        BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
             return ResponseEntity.badRequest().body(
-                    new MessageResponseDTO(400,bindingResult.getAllErrors().get(0).getDefaultMessage()));
+                    new MessageResponseDTO(400,bindingResult.getAllErrors().getFirst().getDefaultMessage()));
         }
         Optional<RegistrationDTO> optionalRegistrationDTO = userService.registerUser(registrationDTO);
 
