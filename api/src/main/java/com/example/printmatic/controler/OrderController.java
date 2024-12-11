@@ -47,7 +47,7 @@ public class OrderController {
 
     @GetMapping("/getAll")
     @PreAuthorize("hasAnyAuthority('EMPLOYEE', 'ADMIN')")
-    public ResponseEntity<List<OrderDTO>> getAllOrders(
+    public ResponseEntity<Page<OrderDTO>> getAllOrders(
             @RequestParam(required = false) OrderStatus status,
             @RequestParam(required = false) SortBy sortBy,
             Pageable pageable
@@ -56,7 +56,7 @@ public class OrderController {
     }
 
     @GetMapping("/user")
-    public ResponseEntity<List<UserOrderDTO>> getUserOrders(
+    public ResponseEntity<Page<UserOrderDTO>> getUserOrders(
             Principal principal,
             Pageable pageable
     ){

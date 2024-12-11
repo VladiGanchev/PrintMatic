@@ -7,7 +7,7 @@ import org.springframework.stereotype.Controller;
 
 @Controller
 public class DbInit implements CommandLineRunner {
-    private UserService userService;
+    private final UserService userService;
 
     public DbInit(UserService userService) {
         this.userService = userService;

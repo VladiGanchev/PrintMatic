@@ -76,5 +76,16 @@ public class GoogleCloudStorageService {
                 Storage.SignUrlOption.httpMethod(HttpMethod.GET)
         ).toString();
     }
+
+    public String generateClientDownloadUrl(String blobName) {
+        BlobInfo blobInfo = BlobInfo.newBuilder(bucketName, blobName).build();
+        return employeeStorage
+                .signUrl(
+                        blobInfo,
+                        365,
+                        TimeUnit.DAYS,
+                        Storage.SignUrlOption.httpMethod(HttpMethod.GET)
+                        ).toString();
+    }
 }
 

@@ -1,4 +1,4 @@
-import api, { setAuthToken } from "./api";
+import api from "./api";
 
 export const loginUser = async (credentials) => {
     try {
@@ -6,7 +6,6 @@ export const loginUser = async (credentials) => {
         console.log('RESPONSE ' + response.data.token)
         const { token } = response.data;
         const { roles } = response.data;
-        setAuthToken(token);
         localStorage.setItem('jwtToken', token);
         localStorage.setItem('roles', roles);
         return response.data;

@@ -31,3 +31,13 @@ export const createOrder = async (orderData) =>{
     }
 }
 
+export const getUserOrders = async (page = 0, size = 10) => {
+    try{
+        const response = await api.get(`/api/order/user?page=${page}&size=${size}`)
+        return response.data;
+    }catch(error){
+        console.error("ERROR in displaying user orders: ", error)
+        throw error.response?.data || 'Displaying user orders failed'
+    }
+}
+
