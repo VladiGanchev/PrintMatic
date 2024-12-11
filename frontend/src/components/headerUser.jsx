@@ -7,6 +7,11 @@ import {
 } from "react-icons/fa";
 
 export default function HeaderUser() {
+
+  const handleClick = () =>{
+    localStorage.clear()
+  }
+
   return (
     <div className="h-screen bg-primary w-48 flex flex-col justify-between p-4">
       <div className="flex flex-col gap-4">
@@ -36,7 +41,7 @@ export default function HeaderUser() {
           </a>
         </div>
       </div>
-      <div className="flex flex-row items-center gap-4">
+      <div className="flex flex-row items-center gap-4" onClick={handleClick}>
         <FaSignOutAlt className="text-white" />
         <a className="text-white" href="/">
           Изход

@@ -21,14 +21,14 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Long> {
             "WHEN :sortBy = 'DEADLINE' THEN o.deadline " +
             "WHEN :sortBy = 'CREATED' THEN o.createdAt " +
             "END ASC")
-    List<OrderEntity> findAllByOptionalStatus(
+    Page<OrderEntity> findAllByOptionalStatus(
             @Param("status") OrderStatus status,
             @Param("sortBy") String sortBy,
             Pageable pageable
     );
 
 
-    List<OrderEntity> findAllByOwnerIdOrderByCreatedAtDesc(
+    Page<OrderEntity> findAllByOwnerIdOrderByCreatedAtDesc(
             Long ownerId,
             Pageable pageable
     );

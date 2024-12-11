@@ -14,11 +14,12 @@ import java.util.Objects;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public final class UserOrderDTO {
+public class UserOrderDTO {
     private Long id;
     private String title;
     private OrderStatus status;
     private LocalDateTime createdAt;
     private LocalDateTime deadline;
     private BigDecimal price;
+    private String documentUrl;
 }

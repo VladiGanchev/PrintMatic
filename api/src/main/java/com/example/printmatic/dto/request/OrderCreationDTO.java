@@ -23,7 +23,6 @@ public class OrderCreationDTO {
     @Min(value = 1, message = "At least one copy is required.")
     private int copies;
 
-
     @NotNull(message = "Double sided or not must be specified.")
     private boolean doubleSided;
 

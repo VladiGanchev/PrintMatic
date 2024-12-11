@@ -10,6 +10,8 @@ import com.example.printmatic.model.UserEntity;
 import com.example.printmatic.repository.OrderRepository;
 import com.example.printmatic.repository.UserRepository;
 import org.modelmapper.ModelMapper;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
@@ -23,19 +25,21 @@ import java.util.Optional;
 @Service
 public class OrderService {
     private final OrderRepository orderRepository;
+    private final MailService mailService;
     private final ModelMapper modelMapper;
     private final UserRepository userRepository;
     private final BigDecimal PRICE_PER_PAGE_A3 = BigDecimal.valueOf(0.30);
     private final BigDecimal PRICE_PER_PAGE_A4 = BigDecimal.valueOf(0.15);
     private final BigDecimal PRICE_PER_PAGE_A5 = BigDecimal.valueOf(0.10);
     private final BigDecimal COLOR_PAGE_MULTIPLIER = BigDecimal.valueOf(4);
-    private final ZoneId zoneId;
+    private final GoogleCloudStorageService googleCloudStorageService;
 
-    public OrderService(OrderRepository orderRepository, ModelMapper modelMapper, UserRepository userRepository, ZoneId zoneId) {
+    public OrderService(OrderRepository orderRepository, MailService mailService, ModelMapper modelMapper, UserRepository userRepository, GoogleCloudStorageService googleCloudStorageService) {
         this.orderRepository = orderRepository;
+        this.mailService = mailService;
         this.modelMapper = modelMapper;
         this.userRepository = userRepository;
-        this.zoneId = zoneId;
+        this.googleCloudStorageService = googleCloudStorageService;
     }
 
     public MessageResponseDTO createOrder(OrderCreationDTO orderCreationDTO, Principal principal) {
@@ -141,7 +145,7 @@ public class OrderService {
         return BigDecimal.ONE;                             // No discount for 1-20 pages
     }
 
-    public List<OrderDTO> getOrders(OrderStatus status, SortBy sortBy, Pageable pageable) {
+    public Page<OrderDTO> getOrders(OrderStatus status, SortBy sortBy, Pageable pageable) {
         //order by deadline
         if (sortBy == null) {
             sortBy = SortBy.DEADLINE;
@@ -150,27 +154,20 @@ public class OrderService {
             pageable = Pageable.ofSize(10).first();
         }
         return orderRepository.findAllByOptionalStatus(status, sortBy.name(), pageable)
-                .stream()
-                .map(orderEntity -> modelMapper.map(orderEntity, OrderDTO.class))
-                .peek(orderDTO -> {
-                    orderDTO.setCreatedAt(orderDTO.getCreatedAt().atZone(zoneId).toLocalDateTime());
-                    orderDTO.setDeadline(orderDTO.getDeadline().atZone(zoneId).toLocalDateTime());
-                })
-                .toList();
+                .map(orderEntity -> modelMapper.map(orderEntity, OrderDTO.class));
 
     }
 
-    public List<UserOrderDTO> getOrdersOfUser(Principal principal, Pageable pageable) {
+    public Page<UserOrderDTO> getOrdersOfUser(Principal principal, Pageable pageable) {
         UserEntity user = userRepository.findByEmail(principal.getName()).get();
 
-        return orderRepository.findAllByOwnerIdOrderByCreatedAtDesc(user.getId(),pageable)
-                .stream()
-                .map(orderEntity -> modelMapper.map(orderEntity, UserOrderDTO.class))
-                .peek(userOrderDTO -> {
-                    userOrderDTO.setCreatedAt(userOrderDTO.getCreatedAt().atZone(zoneId).toLocalDateTime());
-                    userOrderDTO.setDeadline(userOrderDTO.getDeadline().atZone(zoneId).toLocalDateTime());
-                })
-                .toList();
+
+        return orderRepository.findAllByOwnerIdOrderByCreatedAtDesc(user.getId(), pageable)
+                 .map(orderEntity -> {
+                     UserOrderDTO map = modelMapper.map(orderEntity, UserOrderDTO.class);
+                     map.setDocumentUrl(googleCloudStorageService.generateClientDownloadUrl(orderEntity.getFileUrl()));
+                     return map;
+                 });
     }
 
     public MessageResponseDTO updateOrderStatus(Long id, OrderStatus orderStatus) {
@@ -186,10 +183,15 @@ public class OrderService {
         if(messageResponseDTO.status() == 400)
             return messageResponseDTO;
 
+        UserEntity orderOwner = order.getOwner();
+
         if(orderStatus == OrderStatus.CANCELED || orderStatus == OrderStatus.REJECTED) {
-            UserEntity orderOwner = order.getOwner();
             orderOwner.setBalance(orderOwner.getBalance().add(order.getPrice()));
             userRepository.save(orderOwner);
+        }
+
+        if(orderStatus == OrderStatus.COMPLETED){
+            mailService.SendEmail(orderOwner.getEmail(),"Order completed","Your order has been completed");
         }
 
         order.setStatus(orderStatus);
