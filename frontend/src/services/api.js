@@ -9,7 +9,7 @@ const api = axios.create({
 
 api.interceptors.request.use(
     (config) => {
-      const token = localStorage.getItem('jwtToken'); // or from Redux store
+      const token = localStorage.getItem('jwtToken');
       if (token) {
         config.headers['Authorization'] = `Bearer ${token}`;
       }

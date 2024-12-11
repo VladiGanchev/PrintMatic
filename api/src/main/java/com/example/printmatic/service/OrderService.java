@@ -25,6 +25,7 @@ import java.util.Optional;
 @Service
 public class OrderService {
     private final OrderRepository orderRepository;
+    private final MailService mailService;
     private final ModelMapper modelMapper;
     private final UserRepository userRepository;
     private final BigDecimal PRICE_PER_PAGE_A3 = BigDecimal.valueOf(0.30);
@@ -33,8 +34,9 @@ public class OrderService {
     private final BigDecimal COLOR_PAGE_MULTIPLIER = BigDecimal.valueOf(4);
     private final GoogleCloudStorageService googleCloudStorageService;
 
-    public OrderService(OrderRepository orderRepository, ModelMapper modelMapper, UserRepository userRepository, GoogleCloudStorageService googleCloudStorageService) {
+    public OrderService(OrderRepository orderRepository, MailService mailService, ModelMapper modelMapper, UserRepository userRepository, GoogleCloudStorageService googleCloudStorageService) {
         this.orderRepository = orderRepository;
+        this.mailService = mailService;
         this.modelMapper = modelMapper;
         this.userRepository = userRepository;
         this.googleCloudStorageService = googleCloudStorageService;
@@ -181,10 +183,15 @@ public class OrderService {
         if(messageResponseDTO.status() == 400)
             return messageResponseDTO;
 
+        UserEntity orderOwner = order.getOwner();
+
         if(orderStatus == OrderStatus.CANCELED || orderStatus == OrderStatus.REJECTED) {
-            UserEntity orderOwner = order.getOwner();
             orderOwner.setBalance(orderOwner.getBalance().add(order.getPrice()));
             userRepository.save(orderOwner);
+        }
+
+        if(orderStatus == OrderStatus.COMPLETED){
+            mailService.SendEmail(orderOwner.getEmail(),"Order completed","Your order has been completed");
         }
 
         order.setStatus(orderStatus);

@@ -1,4 +1,4 @@
-import { FaCheckCircle } from "react-icons/fa";
+import { FaCheckCircle, FaHourglassHalf, FaClock, FaTimesCircle, FaMoneyBillWave } from "react-icons/fa";
 import HeaderUser from "../components/headerUser";
 import { useEffect, useState } from "react";
 import { getUserOrders } from "../services/orderService";
@@ -11,6 +11,25 @@ export default function UserHistory() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState(null)
   const pageSize = 4;
+
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case 'COMPLETED':
+        return <FaCheckCircle className="text-green-500 text-md" />;
+      case 'IN_PROGRESS':
+        return <FaHourglassHalf className="text-blue-500 text-md" />;
+      case 'PENDING':
+        return <FaClock className="text-yellow-500 text-md" />;
+      case 'CANCELED':
+        return <FaTimesCircle className="text-red-500 text-md" />;
+      case 'REJECTED':
+        return <FaTimesCircle className="text-orange-500 text-md" />;
+      case 'REFUNDED':
+        return <FaMoneyBillWave className="text-green-600 text-md" />;
+      default:
+        return null;
+    }
+  };
 
   const fetchOrders = async (page) => {
     setIsLoading(true)
@@ -78,8 +97,16 @@ export default function UserHistory() {
                 <img src={"/images/pdf.png"} alt={order.title} className="w-12" />
                 <p className="text-md font-bold">{order.title}</p>
                 <div className="flex flex-row gap-1 items-center">
-                  <p className="text-md">Статус: {order.status}</p>
-                  <FaCheckCircle className="text-green-500 text-md" />
+                  <p className="text-md">Статус: {
+                    order.status === 'PENDING' ? 'Изчакващ' :
+                    order.status === 'IN_PROGRESS' ? 'В процес' :
+                    order.status === 'COMPLETED' ? 'Завършена' :
+                    order.status === 'CANCELED' ? 'Отказана' :
+                    order.status === 'REJECTED' ? 'Отхвърлена' :
+                    order.status === 'REFUNDED' ? 'Възстановена' :
+                    order.status
+                  }</p>
+                  {getStatusIcon(order.status)}
                 </div>
                 <p className="text-md">Дата на поръчка: {formatDate(order.createdAt)}</p>
                 <p className="text-md">Крайна дата за изпълнение: {formatDate(order.deadline)}</p>

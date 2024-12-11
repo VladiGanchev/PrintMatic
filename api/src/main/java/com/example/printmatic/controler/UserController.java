@@ -2,8 +2,10 @@ package com.example.printmatic.controler;
 
 
 import com.example.printmatic.dto.request.RegistrationDTO;
+import com.example.printmatic.dto.request.UpdateUserDTO;
 import com.example.printmatic.dto.response.JWTDTO;
 import com.example.printmatic.dto.request.LoginDTO;
+import com.example.printmatic.dto.response.UserDTO;
 import com.example.printmatic.service.UserService;
 import com.example.printmatic.utils.JWTUtils;
 import jakarta.validation.Valid;
@@ -18,11 +20,12 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import com.example.printmatic.dto.response.MessageResponseDTO;
 
+import java.security.Principal;
 import java.util.List;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("api/user/")
+@RequestMapping("api/user")
 @Slf4j
 public class UserController {
     private final UserService userService;
@@ -67,6 +70,24 @@ public class UserController {
         String jwt = jwtUtils.generateToken(userDetails.getUsername());
         List<String> roles = userDetails.getAuthorities().stream().map(GrantedAuthority::getAuthority).toList();
         return ResponseEntity.ok(new JWTDTO(userDetails.getUsername(), jwt, roles));
+    }
+
+    @GetMapping
+    public ResponseEntity<UserDTO> getUser(Principal principal) {
+        UserDTO user = userService.getCurrentUser(principal);
+        return ResponseEntity.ok(user);
+    }
+
+    @PostMapping("update")
+    public ResponseEntity<MessageResponseDTO> updateUser(@Valid @RequestBody UpdateUserDTO updateUserDTO,
+                                                          BindingResult bindingResult, Principal principal) {
+        if (bindingResult.hasErrors()) {
+            return ResponseEntity.badRequest().body(
+                    new MessageResponseDTO(400,bindingResult.getAllErrors().getFirst().getDefaultMessage()));
+        }
+
+        MessageResponseDTO result = userService.updateCurrentUser(updateUserDTO, principal);
+        return ResponseEntity.status(result.status()).body(result);
     }
 
 }
