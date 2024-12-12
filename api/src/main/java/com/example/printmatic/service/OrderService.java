@@ -1,5 +1,6 @@
 package com.example.printmatic.service;
 
+import com.example.printmatic.dto.EmailContentEvent;
 import com.example.printmatic.dto.request.OrderCreationDTO;
 import com.example.printmatic.dto.response.MessageResponseDTO;
 import com.example.printmatic.dto.response.OrderDTO;
@@ -10,21 +11,20 @@ import com.example.printmatic.model.UserEntity;
 import com.example.printmatic.repository.OrderRepository;
 import com.example.printmatic.repository.UserRepository;
 import org.modelmapper.ModelMapper;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.security.Principal;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.util.List;
 import java.util.Optional;
 
 @Service
 public class OrderService {
     private final OrderRepository orderRepository;
+    private final ApplicationEventPublisher eventPublisher;
     private final MailService mailService;
     private final ModelMapper modelMapper;
     private final UserRepository userRepository;
@@ -34,8 +34,9 @@ public class OrderService {
     private final BigDecimal COLOR_PAGE_MULTIPLIER = BigDecimal.valueOf(4);
     private final GoogleCloudStorageService googleCloudStorageService;
 
-    public OrderService(OrderRepository orderRepository, MailService mailService, ModelMapper modelMapper, UserRepository userRepository, GoogleCloudStorageService googleCloudStorageService) {
+    public OrderService(OrderRepository orderRepository, ApplicationEventPublisher eventPublisher, MailService mailService, ModelMapper modelMapper, UserRepository userRepository, GoogleCloudStorageService googleCloudStorageService) {
         this.orderRepository = orderRepository;
+        this.eventPublisher = eventPublisher;
         this.mailService = mailService;
         this.modelMapper = modelMapper;
         this.userRepository = userRepository;
@@ -191,7 +192,12 @@ public class OrderService {
         }
 
         if(orderStatus == OrderStatus.COMPLETED){
-            mailService.SendEmail(orderOwner.getEmail(),"Order completed","Your order has been completed");
+            EmailContentEvent emailContentEvent = new EmailContentEvent(
+                    orderOwner.getEmail(),
+                    "Your order '" + order.getTitle() + "' is ready for pickup - PrintMatic Copy Center",
+                    mailService.createHtmlBody(order, orderOwner)
+            );
+            eventPublisher.publishEvent(emailContentEvent);
         }
 
         order.setStatus(orderStatus);
