@@ -7,9 +7,6 @@ import com.example.printmatic.service.OrderService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-import java.math.BigDecimal;
-import java.security.Principal;
-
 @RestController
 @RequestMapping("/api/wallet")
 public class WalletController {
@@ -18,18 +15,24 @@ public class WalletController {
     private WalletService walletService;
 
     @Autowired
-    private OrderService orderService;
+    private OrderService orderService; 
 
     @PostMapping("/addFunds")
-    public String addFunds(@RequestParam BigDecimal amount, Principal principal) {
-        walletService.addFunds(principal, amount);
+    public String addFunds(@RequestParam Long userId, @RequestParam Double amount) {
+        walletService.addFunds(userId, amount);
         return "Funds added to wallet";
     }
 
     @PostMapping("/pay/{orderId}")
-    public String payFromWallet(@PathVariable Long orderId, Principal principal) {
+    public String payFromWallet(@RequestParam Long userId, @PathVariable Long orderId) {
 
-        boolean success = walletService.payFromWallet(orderId, principal);
+        OrderEntity order = orderService.getOrderById(orderId);
+        
+        if (order == null) {
+            return "Order not found";
+        }
+
+        boolean success = walletService.payFromWallet(userId, order.getPrice().doubleValue(), order);
 
         if (success) {
             return "Payment successful";

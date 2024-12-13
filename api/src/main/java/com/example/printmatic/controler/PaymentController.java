@@ -8,9 +8,8 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
-
-import com.fasterxml.jackson.databind.JsonNode;
 import org.springframework.web.client.RestTemplate;
+import com.fasterxml.jackson.databind.JsonNode;
 
 @RestController
 public class PaymentController {
@@ -27,7 +26,6 @@ public class PaymentController {
     public PaymentController(RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
     }
-
 
     // Потвърждаване на плащането от клиента
     @PostMapping("/api/payment/confirm")
