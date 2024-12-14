@@ -68,4 +68,7 @@ public class OrderEntity {
     @ManyToOne
     @JoinColumn(name = "owner_id", nullable = false)
     private UserEntity owner;
+
+    @OneToOne(mappedBy = "order")
+    private PaymentEntity payment;
 }
