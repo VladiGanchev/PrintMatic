@@ -1,6 +1,7 @@
 package com.example.printmatic.model;
 
 import com.example.printmatic.enums.PaymentStatus;
+import com.example.printmatic.enums.PaymentType;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
@@ -19,30 +20,20 @@ public class PaymentEntity {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
 
-    @NotNull
+    @Column(nullable = false)
     private BigDecimal amount;
 
-    @NotNull
-    private String currency;
+    @Enumerated(EnumType.STRING)
+    private PaymentType paymentType;
 
-    @NotNull
-    private String description;
-
-    @NotNull
-    private LocalDateTime createdAt;
-
+    @Column(nullable = false)
     private LocalDateTime paidAt;
 
-    private String paymentIntentId;
+    @Column
+    private String stripeSessionId;
 
-    private String chargeId;
-
-    @Enumerated(EnumType.STRING)
-    @NotNull
-    private PaymentStatus status;
-
-    @ManyToOne
-    @JoinColumn(name = "user_id", nullable = false)
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "user_id")
     private UserEntity user;
 
     @OneToOne(fetch = FetchType.EAGER)
