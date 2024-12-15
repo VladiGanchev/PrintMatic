@@ -4,6 +4,7 @@ import com.example.printmatic.dto.EmailContentEvent;
 import com.example.printmatic.dto.request.OrderCreationDTO;
 import com.example.printmatic.dto.response.MessageResponseDTO;
 import com.example.printmatic.dto.response.OrderDTO;
+import com.example.printmatic.dto.response.OrderResultDTO;
 import com.example.printmatic.dto.response.UserOrderDTO;
 import com.example.printmatic.enums.*;
 import com.example.printmatic.model.OrderEntity;
@@ -43,13 +44,13 @@ public class OrderService {
         this.googleCloudStorageService = googleCloudStorageService;
     }
 
-    public MessageResponseDTO createOrder(OrderCreationDTO orderCreationDTO, Principal principal) {
+    public OrderResultDTO createOrder(OrderCreationDTO orderCreationDTO, Principal principal) {
         Optional<UserEntity> user = userRepository.findByEmail(principal.getName());
         if (user.isEmpty()) {
-            return new MessageResponseDTO(404, "User not found");
+            return new OrderResultDTO(-1L,404, "User not found");
         }
         if (orderCreationDTO.getDeadline() == null) {
-            return new MessageResponseDTO(401, "Deadline not set");
+            return new OrderResultDTO(-1L,401, "Deadline not set");
         }
 
         int numberOfPages = orderCreationDTO.getTotalPages();
@@ -58,12 +59,12 @@ public class OrderService {
         int copies = orderCreationDTO.getCopies();
 
         if (colorfulPages + grayscalePages != numberOfPages) {
-            return new MessageResponseDTO(400, "Invalid page count: sum of colorful and grayscale pages must equal total pages");
+            return new OrderResultDTO(-1L,400, "Invalid page count: sum of colorful and grayscale pages must equal total pages");
         }
 
         OrderEntity orderEntity = modelMapper.map(orderCreationDTO, OrderEntity.class);
         orderEntity.setOwner(user.get());
-        orderEntity.setStatus(OrderStatus.PENDING);
+        orderEntity.setStatus(OrderStatus.UNPAID);
 
         BigDecimal price = calculatePrice(
                 colorfulPages,
@@ -88,7 +89,7 @@ public class OrderService {
 
         orderRepository.save(orderEntity);
 
-        return new MessageResponseDTO(200, String.format(
+        return new OrderResultDTO(orderEntity.getId(),200, String.format(
                 "Order created successfully. Total price: %.2f BGN", price));
     }
 

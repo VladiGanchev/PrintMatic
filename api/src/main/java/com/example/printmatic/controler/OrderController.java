@@ -3,6 +3,7 @@ package com.example.printmatic.controler;
 import com.example.printmatic.dto.request.OrderCreationDTO;
 import com.example.printmatic.dto.response.MessageResponseDTO;
 import com.example.printmatic.dto.response.OrderDTO;
+import com.example.printmatic.dto.response.OrderResultDTO;
 import com.example.printmatic.dto.response.UserOrderDTO;
 import com.example.printmatic.enums.OrderStatus;
 import com.example.printmatic.enums.SortBy;
@@ -32,18 +33,18 @@ public class OrderController {
         this.orderService = orderService;
     }
 
-
     @PostMapping("/create")
-    public ResponseEntity<MessageResponseDTO> createOrder(@Valid @RequestBody OrderCreationDTO orderCreationDTO,
-                                                           BindingResult bindingResult , Principal principal) {
+    public ResponseEntity<OrderResultDTO> createOrder(@Valid @RequestBody OrderCreationDTO orderCreationDTO,
+                                                      BindingResult bindingResult , Principal principal) {
         if(bindingResult.hasErrors()) {
             return ResponseEntity.badRequest().body(
-                    new MessageResponseDTO(400, bindingResult.getAllErrors().getFirst().getDefaultMessage()));
+                    new OrderResultDTO(-1L,400, bindingResult.getAllErrors().getFirst().getDefaultMessage()));
         }
 
-        MessageResponseDTO result = orderService.createOrder(orderCreationDTO, principal);
-        return ResponseEntity.status(result.status()).body(result);
+        OrderResultDTO result = orderService.createOrder(orderCreationDTO, principal);
+        return ResponseEntity.status(result.getStatus()).body(result);
     }
+
 
     @GetMapping("/getAll")
     @PreAuthorize("hasAnyAuthority('EMPLOYEE', 'ADMIN')")

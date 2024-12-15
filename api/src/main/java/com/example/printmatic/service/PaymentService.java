@@ -1,84 +1,228 @@
 package com.example.printmatic.service;
 
+import com.example.printmatic.dto.request.OrderPaymentSuccessDTO;
+import com.example.printmatic.dto.response.MessageResponseDTO;
+import com.example.printmatic.dto.response.SessionResponseDTO;
+import com.example.printmatic.enums.OrderStatus;
+import com.example.printmatic.enums.PaymentType;
+import com.example.printmatic.model.OrderEntity;
+import com.example.printmatic.model.PaymentEntity;
+import com.example.printmatic.model.UserEntity;
+import com.example.printmatic.repository.OrderRepository;
+import com.example.printmatic.repository.PaymentRepository;
+import com.example.printmatic.repository.UserRepository;
+import com.stripe.Stripe;
+import com.stripe.exception.StripeException;
+import com.stripe.model.Charge;
+import com.stripe.model.PaymentIntent;
+import com.stripe.model.checkout.Session;
+import com.stripe.param.checkout.SessionCreateParams;
+import jakarta.transaction.Transactional;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.client.RestTemplate;
 
-import java.util.HashMap;
-import java.util.Map;
+import javax.annotation.PostConstruct;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.security.Principal;
+import java.time.LocalDateTime;
 
 @Service
+@Slf4j
 public class PaymentService {
+    private Stripe stripe;
+    private final UserRepository userRepository;
+    private final OrderRepository orderRepository;
+    private final PaymentRepository paymentRepository;
 
-    @Value("${paypal.client-id}")
-    private String clientId;
+    @Value("${STRIPE_SECRET_KEY}")
+    private String stripeKey;
 
-    @Value("${paypal.secret}")
-    private String secret;
-
-    private static final String PAYPAL_API = "https://api.sandbox.paypal.com"; // sandbox URL
-
-    @PostMapping("/create-payment")
-    public ResponseEntity<Map<String, String>> createPayment(@RequestBody Map<String, Object> body) {
-        double price = (double) body.get("price");
-
-        Map<String, Object> paymentRequest = new HashMap<>();
-        paymentRequest.put("intent", "sale");
-        paymentRequest.put("payer", Map.of("payment_method", "paypal"));
-
-        Map<String, Object> transaction = new HashMap<>();
-        transaction.put("amount", Map.of("total", String.valueOf(price), "currency", "USD"));
-        transaction.put("description", "Payment for order");
-
-        Map<String, String> redirectUrls = new HashMap<>();
-        redirectUrls.put("cancel_url", "https://www.example.com/cancel");
-        redirectUrls.put("return_url", "https://www.example.com/execute");
-        paymentRequest.put("redirect_urls", redirectUrls);
-
-        paymentRequest.put("transactions", new Map[]{transaction});
-
-        RestTemplate restTemplate = new RestTemplate();
-        String accessToken = getAccessToken();
-
-        String url = PAYPAL_API + "/v1/payments/payment";
-        ResponseEntity<Map> response = restTemplate.postForEntity(url, paymentRequest, Map.class);
-
-        Map<String, String> responseMap = new HashMap<>();
-        responseMap.put("id", (String) response.getBody().get("id"));  // Връща ID на плащането
-
-        return ResponseEntity.ok(responseMap);
+    public PaymentService(UserRepository userRepository, OrderRepository orderRepository, PaymentRepository paymentRepository) {
+        this.userRepository = userRepository;
+        this.orderRepository = orderRepository;
+        this.paymentRepository = paymentRepository;
     }
 
-    @PostMapping("/execute-payment")
-    public ResponseEntity<String> executePayment(@RequestBody Map<String, String> body) {
-        String paymentId = body.get("paymentID");
-        String payerId = body.get("payerID");
-
-        String url = PAYPAL_API + "/v1/payments/payment/" + paymentId + "/execute";
-        Map<String, Object> executeRequest = new HashMap<>();
-        executeRequest.put("payer_id", payerId);
-
-        RestTemplate restTemplate = new RestTemplate();
-        String accessToken = getAccessToken();
-        restTemplate.postForEntity(url, executeRequest, String.class);
-
-        return ResponseEntity.ok("Payment executed successfully");
+    @PostConstruct
+    public void init(){
+        stripe.apiKey = stripeKey;
     }
 
-    private String getAccessToken() {
-        String url = PAYPAL_API + "/v1/oauth2/token";
-        String auth = "Basic " + java.util.Base64.getEncoder().encodeToString((clientId + ":" + secret).getBytes());
+    public SessionResponseDTO createSessionForPayingOrder(Long orderId, Principal principal) {
+        try {
+            OrderEntity orderEntity = orderRepository.findById(orderId).orElseThrow(() -> new IllegalArgumentException("Order not found"));
 
-        RestTemplate restTemplate = new RestTemplate();
-        Map<String, String> headers = new HashMap<>();
-        headers.put("Authorization", auth);
+            UserEntity user = userRepository.findByEmail(principal.getName())
+                    .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        Map<String, String> body = new HashMap<>();
-        body.put("grant_type", "client_credentials");
+            Long amountInCents = orderEntity.getPrice()
+                    .setScale(2, RoundingMode.HALF_UP)
+                    .multiply(new BigDecimal("100"))
+                    .longValue();
 
-        ResponseEntity<Map> response = restTemplate.postForEntity(url, body, Map.class);
-        return (String) response.getBody().get("access_token");
+            SessionCreateParams params = SessionCreateParams.builder()
+                    .setMode(SessionCreateParams.Mode.PAYMENT)
+                    .setCustomerEmail(user.getEmail())
+                    .setSuccessUrl("http://localhost5173:/order/" + orderId + "/success")  // Consider making these URLs configurable
+                    .setCancelUrl("http://localhost:5173/order/" + orderId + "/fail")
+                    .addLineItem(SessionCreateParams.LineItem.builder()
+                            .setPriceData(SessionCreateParams.LineItem.PriceData.builder()
+                                    .setCurrency("bgn")
+                                    .setProductData(SessionCreateParams.LineItem.PriceData.ProductData.builder()
+                                            .setName("Order Payment")
+                                            .setDescription("Payment for order " + orderId)
+                                            .build())
+                                    .setUnitAmount(amountInCents)
+                                    .build())
+                            .setQuantity(1L)
+                            .build())
+                    .build();
+            Session session = Session.create(params);
+
+            SessionResponseDTO sessionResponseDTO = new SessionResponseDTO();
+            sessionResponseDTO.setSessionId(session.getId());
+            sessionResponseDTO.setStripePaymentURL(session.getUrl());
+
+            return sessionResponseDTO;
+        } catch (StripeException e) {
+            log.error("Error creating Stripe session: ", e);
+            throw new RuntimeException("Failed to create payment session", e);
+        }
+    }
+
+    @Transactional
+    public MessageResponseDTO orderSuccess(OrderPaymentSuccessDTO orderPaymentSuccessDTO, Principal principal) {
+        try {
+            Session session = Session.retrieve(orderPaymentSuccessDTO.getStripeSessionId());
+            PaymentIntent paymentIntent = PaymentIntent.retrieve(session.getPaymentIntent());
+            Charge charge = Charge.retrieve(paymentIntent.getLatestCharge());
+
+            if (charge.getStatus().equals("succeeded")) {
+                OrderEntity orderEntity = orderRepository.findById(orderPaymentSuccessDTO.getOrderId()).orElseThrow(() -> new IllegalArgumentException("Order not found"));
+                UserEntity userEntity = userRepository.findByEmail(principal.getName()).orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+                PaymentEntity paymentEntity = new PaymentEntity();
+                paymentEntity.setPaymentType(PaymentType.STRIPE);
+                paymentEntity.setPaidAt(LocalDateTime.now());
+                paymentEntity.setStripeSessionId(orderPaymentSuccessDTO.getStripeSessionId());
+                paymentEntity.setAmount(orderEntity.getPrice());
+
+                paymentEntity.setOrder(orderEntity);
+                paymentEntity.setUser(userEntity);
+
+                paymentRepository.save(paymentEntity);
+
+                userEntity.getPayments().add(paymentEntity);
+                orderEntity.setStatus(OrderStatus.PENDING);
+                orderEntity.setPayment(paymentEntity);
+                orderRepository.save(orderEntity);
+                userRepository.save(userEntity);
+
+                return new MessageResponseDTO(200, "Payment successful");
+            }else {
+                return new MessageResponseDTO(500, "Charge not successful");
+            }
+        } catch (StripeException e) {
+            return new MessageResponseDTO(500, "Stripe session could not be retrieved");
+        }
+    }
+
+    public SessionResponseDTO addToBalanceSession(BigDecimal amount, Principal principal) {
+        try {
+            UserEntity user = userRepository.findByEmail(principal.getName())
+                    .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+            Long amountInCents = amount
+                    .setScale(2, RoundingMode.HALF_UP)
+                    .multiply(new BigDecimal("100"))
+                    .longValue();
+
+            SessionCreateParams params = SessionCreateParams.builder()
+                    .setMode(SessionCreateParams.Mode.PAYMENT)
+                    .setCustomerEmail(user.getEmail())
+                    .setSuccessUrl("http://localhost5173:/balance/success")  // Consider making these URLs configurable
+                    .setCancelUrl("http://localhost:5173/balance/fail")
+                    .addLineItem(SessionCreateParams.LineItem.builder()
+                            .setPriceData(SessionCreateParams.LineItem.PriceData.builder()
+                                    .setCurrency("bgn")
+                                    .setProductData(SessionCreateParams.LineItem.PriceData.ProductData.builder()
+                                            .setName("Deposit balance")
+                                            .setDescription("Deposit balance for user " + user.getFirstName() + " " + user.getLastName())
+                                            .build())
+                                    .setUnitAmount(amountInCents)
+                                    .build())
+                            .setQuantity(1L)
+                            .build())
+                    .build();
+            Session session = Session.create(params);
+
+            SessionResponseDTO sessionResponseDTO = new SessionResponseDTO();
+            sessionResponseDTO.setSessionId(session.getId());
+            sessionResponseDTO.setStripePaymentURL(session.getUrl());
+
+            return sessionResponseDTO;
+        } catch (StripeException e) {
+            log.error("Error creating Stripe session: ", e);
+            throw new RuntimeException("Failed to create payment session", e);
+        }
+    }
+
+    public MessageResponseDTO depositBalanceSuccess(String stripeId, Principal principal) {
+        try {
+            Session session = Session.retrieve(stripeId);
+            PaymentIntent paymentIntent = PaymentIntent.retrieve(session.getPaymentIntent());
+            Charge charge = Charge.retrieve(paymentIntent.getLatestCharge());
+
+            if (charge.getStatus().equals("succeeded")) {
+                UserEntity user = userRepository.findByEmail(principal.getName())
+                        .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+                BigDecimal amount = BigDecimal.valueOf(charge.getAmount())
+                        .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+
+                user.setBalance(user.getBalance().add(amount));
+                userRepository.save(user);
+                return new MessageResponseDTO(200, "Deposit balance successful");
+            }else {
+                return new MessageResponseDTO(500, "Charge not successful");
+            }
+        } catch (StripeException e) {
+            return new MessageResponseDTO(500, "Stripe session could not be retrieved");
+        }
+    }
+
+    @Transactional
+    public MessageResponseDTO payFromBalance(Long orderId, Principal principal) {
+        OrderEntity orderEntity = orderRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("Order not found"));
+
+        UserEntity userEntity = userRepository.findByEmail(principal.getName())
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        if(userEntity.getBalance().compareTo(orderEntity.getPrice()) < 0) {
+            return new MessageResponseDTO(500, "Payment not successful");
+        }
+
+        PaymentEntity paymentEntity = new PaymentEntity();
+        paymentEntity.setPaymentType(PaymentType.BALANCE);
+        paymentEntity.setPaidAt(LocalDateTime.now());
+        paymentEntity.setAmount(orderEntity.getPrice());
+        paymentEntity.setStripeSessionId(null);
+
+        paymentEntity.setOrder(orderEntity);
+        paymentEntity.setUser(userEntity);
+        paymentRepository.save(paymentEntity);
+
+        userEntity.setBalance(userEntity.getBalance().subtract(orderEntity.getPrice()));
+        userEntity.getPayments().add(paymentEntity);
+        orderEntity.setStatus(OrderStatus.PENDING);
+        orderEntity.setPayment(paymentEntity);
+        orderRepository.save(orderEntity);
+        userRepository.save(userEntity);
+
+        return new MessageResponseDTO(200, "Payment from balance successful");
+
     }
 }

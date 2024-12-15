@@ -41,6 +41,9 @@ public class UserEntity {
     @OneToMany(mappedBy = "owner")
     private List<OrderEntity> orders;
 
+    @OneToMany(mappedBy = "user")
+    private List<PaymentEntity> payments;
+
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "users_roles",
     joinColumns = @JoinColumn(name = "users_id"),

@@ -1,94 +1,41 @@
 package com.example.printmatic.model;
 
+import com.example.printmatic.enums.PaymentStatus;
+import com.example.printmatic.enums.PaymentType;
+import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.criteria.Order;
-
 @Entity
+@Table(name = "payment")
+@Data
+@NoArgsConstructor
 public class PaymentEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
 
     @Column(nullable = false)
-    private String paymentMethod;
+    private BigDecimal amount;
 
-    @Column(nullable = false, unique = true)
-    private String transactionId;
-
-    @Column(nullable = false)
-    private String paymentStatus;
+    @Enumerated(EnumType.STRING)
+    private PaymentType paymentType;
 
     @Column(nullable = false)
-    private LocalDateTime timestamp;
+    private LocalDateTime paidAt;
 
-    @ManyToOne
-    private Order order;
+    @Column
+    private String stripeSessionId;
 
-    // Constructor
-    public PaymentEntity(String paymentMethod, String transactionId, String paymentStatus, Order order) {
-        this.paymentMethod = paymentMethod;
-        this.transactionId = transactionId;
-        this.paymentStatus = paymentStatus;
-        this.timestamp = LocalDateTime.now();
-        this.order = order;
-    }
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "user_id")
+    private UserEntity user;
 
-    // Default Constructor
-    public PaymentEntity() {
-    }
-
-    // Getters and Setters
-    public Long getId() {
-        return id;
-    }
-
-    public String getPaymentMethod() {
-        return paymentMethod;
-    }
-
-    public void setPaymentMethod(String paymentMethod) {
-        this.paymentMethod = paymentMethod;
-    }
-
-    public String getTransactionId() {
-        return transactionId;
-    }
-
-    public void setTransactionId(String transactionId) {
-        this.transactionId = transactionId;
-    }
-
-    public String getPaymentStatus() {
-        return paymentStatus;
-    }
-
-    public void setPaymentStatus(String paymentStatus) {
-        this.paymentStatus = paymentStatus;
-    }
-
-    public LocalDateTime getTimestamp() {
-        return timestamp;
-    }
-
-    public void setTimestamp(LocalDateTime timestamp) {
-        this.timestamp = timestamp;
-    }
-
-    public Order getOrder() {
-        return order;
-    }
-
-    public void setOrder(Order order) {
-        this.order = order;
-    }
+    @OneToOne(fetch = FetchType.EAGER)
+    private OrderEntity order;
 }
-
-

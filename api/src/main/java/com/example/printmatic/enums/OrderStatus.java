@@ -1,6 +1,7 @@
 package com.example.printmatic.enums;
 
 public enum OrderStatus {
+    UNPAID,
     PENDING,
     IN_PROGRESS,
     COMPLETED,

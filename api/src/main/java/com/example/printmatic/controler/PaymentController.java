@@ -1,100 +1,70 @@
 package com.example.printmatic.controler;
 
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
+import com.example.printmatic.dto.request.OrderPaymentSuccessDTO;
+import com.example.printmatic.dto.response.MessageResponseDTO;
+import com.example.printmatic.dto.response.SessionResponseDTO;
+import com.example.printmatic.service.PaymentService;
+import jakarta.websocket.server.PathParam;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.client.RestTemplate;
-import com.fasterxml.jackson.databind.JsonNode;
+import org.springframework.web.bind.annotation.*;
+
+import java.math.BigDecimal;
+import java.security.Principal;
 
 @RestController
+@RequestMapping("api/payment")
 public class PaymentController {
+    private final PaymentService paymentService;
 
-    @Value("${paypal.client-id}")
-    private String clientId;
-
-    @Value("${paypal.client-secret}")
-    private String clientSecret;
-
-    private final String PAYPAL_API_URL = "https://api.sandbox.paypal.com";  // За Sandbox среда
-    private final RestTemplate restTemplate;
-
-    public PaymentController(RestTemplate restTemplate) {
-        this.restTemplate = restTemplate;
+    public PaymentController(PaymentService stripeService) {
+        this.paymentService = stripeService;
     }
 
-    // Потвърждаване на плащането от клиента
-    @PostMapping("/api/payment/confirm")
-    public String confirmPayment(@RequestBody PaymentConfirmationRequest request) {
+    @PostMapping("/createOrderSession/{orderId}")
+    public ResponseEntity<SessionResponseDTO> createOrderSession(@PathVariable Long orderId,
+                                                                Principal principal) {
         try {
-            String orderId = request.getOrderId();
-
-            // Получаване на токен за удостоверяване от PayPal
-            String authToken = getPayPalAuthToken();
-
-            // Извличаме информация за поръчката от PayPal
-            JsonNode orderDetails = getPayPalOrderDetails(orderId, authToken);
-
-            if (orderDetails != null && orderDetails.path("status").asText().equals("COMPLETED")) {
-                // Ако плащането е успешно, връщаме статус
-                return "Payment confirmed successfully";
-            } else {
-                return "Payment failed";
-            }
+            SessionResponseDTO sessionForPayingOrder = paymentService.createSessionForPayingOrder(orderId, principal);
+            return ResponseEntity.ok(sessionForPayingOrder);
         } catch (Exception e) {
-            e.printStackTrace();
-            return "Error confirming payment";
+            return ResponseEntity.internalServerError().build();
         }
     }
 
-    // Метод за получаване на токен от PayPal
-    private String getPayPalAuthToken() {
-        // Създаване на заявка за получаване на токен
-        String url = PAYPAL_API_URL + "/v1/oauth2/token";
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("Authorization", "Basic " + encodeCredentials(clientId, clientSecret));
-        headers.set("Content-Type", "application/x-www-form-urlencoded");
 
-        String body = "grant_type=client_credentials";
-        HttpEntity<String> request = new HttpEntity<>(body, headers);
-
-        ResponseEntity<JsonNode> response = restTemplate.exchange(url, HttpMethod.POST, request, JsonNode.class);
-        JsonNode responseBody = response.getBody();
-
-        return responseBody != null ? responseBody.path("access_token").asText() : null;
+    @PostMapping("/orderSuccess")
+    public ResponseEntity<MessageResponseDTO> orderSuccess(@RequestBody OrderPaymentSuccessDTO orderPaymentSuccessDTO, Principal principal) {
+        MessageResponseDTO message = paymentService.orderSuccess(orderPaymentSuccessDTO, principal);
+        return ResponseEntity.status(message.status()).body(message);
     }
 
-    // Метод за получаване на информация за поръчката от PayPal
-    private JsonNode getPayPalOrderDetails(String orderId, String authToken) {
-        String url = PAYPAL_API_URL + "/v2/checkout/orders/" + orderId;
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("Authorization", "Bearer " + authToken);
-
-        HttpEntity<String> request = new HttpEntity<>(headers);
-        ResponseEntity<JsonNode> response = restTemplate.exchange(url, HttpMethod.GET, request, JsonNode.class);
-
-        return response.getBody();
+    @PostMapping("/addToBalanceSession")
+    public ResponseEntity<SessionResponseDTO> addToBalanceSession(@PathParam("amount") BigDecimal amount,
+                                                           Principal principal) {
+        try {
+            SessionResponseDTO sessionForBalance = paymentService.addToBalanceSession(amount, principal);
+            return ResponseEntity.ok(sessionForBalance);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
     }
 
-    // Метод за кодиране на клиентски идентификатор и секрет в Base64
-    private String encodeCredentials(String clientId, String clientSecret) {
-        return java.util.Base64.getEncoder().encodeToString((clientId + ":" + clientSecret).getBytes());
-    }
-}
-
-// DTO клас за обработка на потвърждението
-class PaymentConfirmationRequest {
-    private String orderId;
-
-    public String getOrderId() {
-        return orderId;
+    @PostMapping("/depositBalanceSuccess")
+    public ResponseEntity<MessageResponseDTO> depositBalanceSuccess(@PathParam("stripeId") String stripeId,
+                                                                    Principal principal) {
+        MessageResponseDTO result = paymentService.depositBalanceSuccess(stripeId, principal);
+        return ResponseEntity.status(result.status()).body(result);
     }
 
-    public void setOrderId(String orderId) {
-        this.orderId = orderId;
+    @PostMapping("/payOrderFromBalance/{orderId}")
+    public ResponseEntity<MessageResponseDTO> payOrderFromBalance(@PathVariable Long orderId,
+                                                                  Principal principal) {
+        try{
+        MessageResponseDTO message = paymentService.payFromBalance(orderId, principal);
+        return ResponseEntity.status(message.status()).body(message);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
     }
+
 }
