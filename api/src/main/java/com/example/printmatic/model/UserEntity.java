@@ -41,7 +41,7 @@ public class UserEntity {
     @OneToMany(mappedBy = "owner")
     private List<OrderEntity> orders;
 
-    @OneToMany(mappedBy = "user")
+    @OneToMany(mappedBy = "user", fetch = FetchType.EAGER)
     private List<PaymentEntity> payments;
 
     @ManyToMany(fetch = FetchType.EAGER)

@@ -9,6 +9,7 @@ import UserNotifications from "./pages/userNotifications";
 import UserHistory from "./pages/userHistory";
 import UserProfile from "./pages/userProfile";
 import LoginPage from "./pages/LoginPage"
+import BalancePayment from "./pages/BalancePayment";
 
 function App() {
   return (
@@ -23,6 +24,7 @@ function App() {
       <Route path="/userNotifications" element={<UserNotifications />} />
       <Route path="/userHistory" element={<UserHistory />} />
       <Route path="/userProfile" element={<UserProfile />} />
+      <Route path="/balancePayment" element={<BalancePayment/>}/>
 
       <Route path="*" element={<h1>404 Not Found</h1>} />
     </Routes>

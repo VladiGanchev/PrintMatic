@@ -1,8 +1,11 @@
 import { useEffect, useState } from "react";
-import { getLoginUser, updateUser } from "../services/userService"
+import { getLoginUser, updateUser, depositBalance } from "../services/userService"
 import HeaderUser from "../components/headerUser";
+import PaymentModal from "../components/PaymentModal";
 
 export default function UserProfile() {
+  const [openModal, setOpenModal] = useState(false)
+  const [submittedAmount, setSubmittedAmount] = useState(null);
   const [updateData, setUpdateData] = useState({
     firstName: "",
     lastName: "",
@@ -56,6 +59,37 @@ export default function UserProfile() {
     }
   };
 
+  const handleOpenModal = () => {
+    setOpenModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setOpenModal(false);
+  };
+
+  const handleSubmit = async(amount) => {
+    if (!amount || parseFloat(amount) <= 0) {
+      alert("Please enter a valid amount greater than 0.");
+      return;
+    }
+    setSubmittedAmount(amount);
+    try {
+      const sessionForBalance = await depositBalance(amount); 
+      const stripePaymentURL = sessionForBalance?.stripePaymentURL;
+      localStorage.setItem('session', sessionForBalance.sessionId)
+  
+      if (stripePaymentURL) {
+        window.location.href = stripePaymentURL;
+      } else {
+        alert("Error: Stripe payment URL not found.");
+      }
+    } catch (error) {
+      console.error("Error processing payment:", error);
+      alert("An error occurred while processing your payment.");
+    }
+  };
+
+
   if (isLoading) {
     return (
       <div className="w-screen h-screen flex flex-row hover:cursor-default">
@@ -86,7 +120,8 @@ export default function UserProfile() {
               </p>
             </div>
           </div>
-          <button className="bg-green-500 text-white rounded-md p-2 h-12 w-48 hover:bg-green-600">
+          <button className="bg-green-500 text-white rounded-md p-2 h-12 w-48 hover:bg-green-600"
+                  onClick={handleOpenModal}>
             Добавете средства
           </button>
         </div>
@@ -160,6 +195,10 @@ export default function UserProfile() {
           </button>
         </div>
       </div>
+      <PaymentModal  
+        isOpen={openModal}
+        onClose={handleCloseModal}
+        onSubmit={handleSubmit}/>
     </div>
   );
 }

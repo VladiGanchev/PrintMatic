@@ -23,4 +23,9 @@ public class RoleEntity {
 
     @ManyToMany(mappedBy = "roles", fetch = FetchType.LAZY)
     private List<UserEntity> users;
+
+    @Override
+    public String toString() {
+        return getName();
+    }
 }

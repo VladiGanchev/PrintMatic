@@ -13,5 +13,5 @@ public class SearchUserDTO {
     private String firstName;
     private String lastName;
     private String email;
-    private List<UserDTO> users;
+    private List<String> roles;
 }

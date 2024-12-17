@@ -17,16 +17,19 @@ import com.stripe.model.Charge;
 import com.stripe.model.PaymentIntent;
 import com.stripe.model.checkout.Session;
 import com.stripe.param.checkout.SessionCreateParams;
-import jakarta.transaction.Transactional;
+import jakarta.persistence.LockModeType;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.PostConstruct;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.security.Principal;
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 @Service
 @Slf4j
@@ -129,6 +132,54 @@ public class PaymentService {
         }
     }
 
+    @Transactional
+    public MessageResponseDTO depositBalanceSuccess(String stripeId, Principal principal) {
+        try {
+            Session session = Session.retrieve(stripeId);
+            PaymentIntent paymentIntent = PaymentIntent.retrieve(session.getPaymentIntent());
+            Charge charge = Charge.retrieve(paymentIntent.getLatestCharge());
+
+            Optional<PaymentEntity> payment = paymentRepository.findByStripeSessionId(stripeId);
+
+            if (charge.getStatus().equals("succeeded") && payment.isEmpty()) {
+//                savePaymentTransactional(charge, principal, stripeId);
+
+                UserEntity user = userRepository.findByEmail(principal.getName())
+                        .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+                BigDecimal amount = BigDecimal.valueOf(charge.getAmount())
+                        .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+
+                PaymentEntity paymentEntity = new PaymentEntity();
+                paymentEntity.setPaymentType(PaymentType.STRIPE);
+                paymentEntity.setPaidAt(LocalDateTime.now());
+                paymentEntity.setAmount(amount);
+                paymentEntity.setStripeSessionId(stripeId);
+
+                paymentEntity.setUser(user);
+
+                paymentRepository.save(paymentEntity);
+
+                user.setBalance(user.getBalance().add(amount));
+                user.getPayments().add(paymentEntity);
+                userRepository.save(user);
+
+
+                return new MessageResponseDTO(200, "Deposit balance successful");
+            }else {
+                log.error("session cancelled");
+                return new MessageResponseDTO(500, "Charge not successful");
+            }
+        } catch (StripeException e) {
+            return new MessageResponseDTO(500, "Stripe session could not be retrieved");
+        }
+    }
+
+//    @Transactional
+//    public void savePaymentTransactional(Charge charge, Principal principal, String stripeId) {
+//    }
+
+
     public SessionResponseDTO addToBalanceSession(BigDecimal amount, Principal principal) {
         try {
             UserEntity user = userRepository.findByEmail(principal.getName())
@@ -142,8 +193,8 @@ public class PaymentService {
             SessionCreateParams params = SessionCreateParams.builder()
                     .setMode(SessionCreateParams.Mode.PAYMENT)
                     .setCustomerEmail(user.getEmail())
-                    .setSuccessUrl("http://localhost5173:/balance/success")  // Consider making these URLs configurable
-                    .setCancelUrl("http://localhost:5173/balance/fail")
+                    .setSuccessUrl("http://localhost:5173/balancePayment")  // Consider making these URLs configurable
+                    .setCancelUrl("http://localhost:5173/userProfile")
                     .addLineItem(SessionCreateParams.LineItem.builder()
                             .setPriceData(SessionCreateParams.LineItem.PriceData.builder()
                                     .setCurrency("bgn")
@@ -166,30 +217,6 @@ public class PaymentService {
         } catch (StripeException e) {
             log.error("Error creating Stripe session: ", e);
             throw new RuntimeException("Failed to create payment session", e);
-        }
-    }
-
-    public MessageResponseDTO depositBalanceSuccess(String stripeId, Principal principal) {
-        try {
-            Session session = Session.retrieve(stripeId);
-            PaymentIntent paymentIntent = PaymentIntent.retrieve(session.getPaymentIntent());
-            Charge charge = Charge.retrieve(paymentIntent.getLatestCharge());
-
-            if (charge.getStatus().equals("succeeded")) {
-                UserEntity user = userRepository.findByEmail(principal.getName())
-                        .orElseThrow(() -> new IllegalArgumentException("User not found"));
-
-                BigDecimal amount = BigDecimal.valueOf(charge.getAmount())
-                        .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
-
-                user.setBalance(user.getBalance().add(amount));
-                userRepository.save(user);
-                return new MessageResponseDTO(200, "Deposit balance successful");
-            }else {
-                return new MessageResponseDTO(500, "Charge not successful");
-            }
-        } catch (StripeException e) {
-            return new MessageResponseDTO(500, "Stripe session could not be retrieved");
         }
     }
 

@@ -38,7 +38,7 @@ public class PaymentController {
         return ResponseEntity.status(message.status()).body(message);
     }
 
-    @PostMapping("/addToBalanceSession")
+    @GetMapping("/addToBalanceSession")
     public ResponseEntity<SessionResponseDTO> addToBalanceSession(@PathParam("amount") BigDecimal amount,
                                                            Principal principal) {
         try {

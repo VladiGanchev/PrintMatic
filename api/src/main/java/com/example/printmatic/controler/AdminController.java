@@ -31,7 +31,7 @@ public class AdminController {
    }
 
    @GetMapping("/search/email")
-   public ResponseEntity<List<SearchUserDTO>> searchUser(@RequestParam(required = false) String query){
+   public ResponseEntity<List<SearchUserDTO>> searchUser(@RequestParam(required = true) String query){
         return ResponseEntity.ok(adminService.searchUser(query));
    }
 }
