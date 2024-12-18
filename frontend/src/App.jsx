@@ -10,6 +10,7 @@ import UserHistory from "./pages/userHistory";
 import UserProfile from "./pages/userProfile";
 import LoginPage from "./pages/LoginPage"
 import BalancePayment from "./pages/BalancePayment";
+import StripePayment from "./pages/StripePayment";
 
 function App() {
   return (
@@ -25,6 +26,7 @@ function App() {
       <Route path="/userHistory" element={<UserHistory />} />
       <Route path="/userProfile" element={<UserProfile />} />
       <Route path="/balancePayment" element={<BalancePayment/>}/>
+      <Route path='/stripePayment/:orderId' element={<StripePayment/>}/>
 
       <Route path="*" element={<h1>404 Not Found</h1>} />
     </Routes>

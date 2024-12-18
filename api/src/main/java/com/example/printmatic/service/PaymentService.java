@@ -68,8 +68,8 @@ public class PaymentService {
             SessionCreateParams params = SessionCreateParams.builder()
                     .setMode(SessionCreateParams.Mode.PAYMENT)
                     .setCustomerEmail(user.getEmail())
-                    .setSuccessUrl("http://localhost5173:/order/" + orderId + "/success")  // Consider making these URLs configurable
-                    .setCancelUrl("http://localhost:5173/order/" + orderId + "/fail")
+                    .setSuccessUrl("http://localhost:5173/stripePayment/"+orderId)  // Consider making these URLs configurable
+                    .setCancelUrl("http://localhost:5173/userProfile")
                     .addLineItem(SessionCreateParams.LineItem.builder()
                             .setPriceData(SessionCreateParams.LineItem.PriceData.builder()
                                     .setCurrency("bgn")

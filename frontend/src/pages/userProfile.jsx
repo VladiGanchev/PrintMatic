@@ -77,7 +77,6 @@ export default function UserProfile() {
       const sessionForBalance = await depositBalance(amount); 
       const stripePaymentURL = sessionForBalance?.stripePaymentURL;
       localStorage.setItem('session', sessionForBalance.sessionId)
-  
       if (stripePaymentURL) {
         window.location.href = stripePaymentURL;
       } else {
