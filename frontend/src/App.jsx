@@ -8,21 +8,24 @@ import UserPayment from "./pages/userPayment";
 import UserNotifications from "./pages/userNotifications";
 import UserHistory from "./pages/userHistory";
 import UserProfile from "./pages/userProfile";
-import LoginPage from "./pages/LoginPage"
+import LoginPage from "./pages/LoginPage";
+import EmployeeScreen from "./pages/employeePanel";
+import AdminPanel from "./pages/adminPanel";
 
 function App() {
   return (
     <Routes>
-
       <Route path="/" element={<Home />} />
 
       <Route path="/register" element={<RegisterPage />} />
-      <Route path="/login" element={<LoginPage />}/>
+      <Route path="/login" element={<LoginPage />} />
       <Route path="/userHome" element={<UserHome />} />
       <Route path="/userPayment" element={<UserPayment />} />
       <Route path="/userNotifications" element={<UserNotifications />} />
       <Route path="/userHistory" element={<UserHistory />} />
       <Route path="/userProfile" element={<UserProfile />} />
+      <Route path="/employeePanel" element={<EmployeeScreen />} />
+      <Route path="/adminPanel" element={<AdminPanel />} />
 
       <Route path="*" element={<h1>404 Not Found</h1>} />
     </Routes>
