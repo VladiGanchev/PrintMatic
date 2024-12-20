@@ -16,13 +16,13 @@ import java.util.Optional;
 
 @Repository
 public interface OrderRepository extends JpaRepository<OrderEntity, Long> {
-    @Query("SELECT o FROM OrderEntity o WHERE (:status IS NULL OR o.status = :status) " +
+    @Query("SELECT o FROM OrderEntity o where (o.status in :orderStatus)" +
             "ORDER BY CASE " +
             "WHEN :sortBy = 'DEADLINE' THEN o.deadline " +
             "WHEN :sortBy = 'CREATED' THEN o.createdAt " +
             "END ASC")
-    Page<OrderEntity> findAllByOptionalStatus(
-            @Param("status") OrderStatus status,
+    Page<OrderEntity> findAllByStatusesInSorted(
+            @Param("orderStatus") List<OrderStatus> statuses,
             @Param("sortBy") String sortBy,
             Pageable pageable
     );

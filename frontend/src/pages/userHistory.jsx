@@ -117,7 +117,7 @@ export default function UserHistory() {
               </a>
             )))}
         </div>
-        {/* Pagination Controls */}
+        
         {totalPages > 1 && (
           <div className="flex justify-center mt-8 gap-2 pb-8">
             <button

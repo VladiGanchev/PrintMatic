@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.security.Principal;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -147,7 +148,7 @@ public class OrderService {
         return BigDecimal.ONE;                             // No discount for 1-20 pages
     }
 
-    public Page<OrderDTO> getOrders(OrderStatus status, SortBy sortBy, Pageable pageable) {
+    public Page<OrderDTO> getOrders(SortBy sortBy, Pageable pageable) {
         //order by deadline
         if (sortBy == null) {
             sortBy = SortBy.DEADLINE;
@@ -155,7 +156,7 @@ public class OrderService {
         if (pageable == null) {
             pageable = Pageable.ofSize(10).first();
         }
-        return orderRepository.findAllByOptionalStatus(status, sortBy.name(), pageable)
+        return orderRepository.findAllByStatusesInSorted(List.of(OrderStatus.PENDING, OrderStatus.IN_PROGRESS),sortBy.name(), pageable)
                 .map(orderEntity -> modelMapper.map(orderEntity, OrderDTO.class));
 
     }

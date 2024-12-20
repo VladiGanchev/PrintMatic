@@ -55,14 +55,13 @@ public class OrderController {
     }
 
 
-    @GetMapping("/getAll")
+    @GetMapping("/getPendingOrInProgress")
     @PreAuthorize("hasAnyAuthority('EMPLOYEE', 'ADMIN')")
     public ResponseEntity<Page<OrderDTO>> getAllOrders(
-            @RequestParam(required = false) OrderStatus status,
             @RequestParam(required = false) SortBy sortBy,
             Pageable pageable
     ){
-        return ResponseEntity.ok(orderService.getOrders(status, sortBy, pageable));
+        return ResponseEntity.ok(orderService.getOrders(sortBy, pageable));
     }
 
     @GetMapping("/user")
@@ -74,7 +73,7 @@ public class OrderController {
     }
 
     @PostMapping("/updateOrderStatus/{id}")
-    @PreAuthorize("hasAnyAuthority('EMPLOYEE')")
+    @PreAuthorize("hasAnyAuthority('EMPLOYEE', 'ADMIN')")
     public ResponseEntity<MessageResponseDTO> setOrderStatus(
             @PathVariable Long id,
             @RequestParam(required = true) OrderStatus orderStatus
