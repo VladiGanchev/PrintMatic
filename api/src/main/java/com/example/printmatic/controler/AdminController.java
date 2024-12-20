@@ -20,15 +20,22 @@ public class AdminController {
         this.adminService = adminService;
     }
 
-   @PostMapping("grantRole")
-   @PreAuthorize("hasAnyAuthority('ADMIN')")
-   public ResponseEntity<MessageResponseDTO> grantRole(
-           @RequestParam(value = "email" , required = true) String email,
-           @RequestParam(value = "role", required = true) RoleEnum role) {
+    @PostMapping("grantRole")
+    @PreAuthorize("hasAnyAuthority('ADMIN')")
+    public ResponseEntity<MessageResponseDTO> grantRole(
+            @RequestParam(value = "email" , required = true) String email,
+            @RequestParam(value = "role", required = true) RoleEnum role) {
 
-       MessageResponseDTO result = adminService.grantRole(email, role);
-       return ResponseEntity.status(result.status()).body(result);
-   }
+        MessageResponseDTO result = adminService.grantRole(email, role);
+        return ResponseEntity.status(result.status()).body(result);
+    }
+    @DeleteMapping("removeRole")
+    public ResponseEntity<MessageResponseDTO> removeRole(
+            @RequestParam(value = "email" , required = true) String email,
+            @RequestParam(value = "role", required = true) RoleEnum role) {
+        MessageResponseDTO result = adminService.removeRole(email, role);
+        return ResponseEntity.status(result.status()).body(result);
+    }
 
    @GetMapping("/search/email")
    public ResponseEntity<List<SearchUserDTO>> searchUser(@RequestParam(required = true) String query){

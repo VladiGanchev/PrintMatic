@@ -11,6 +11,7 @@ import com.example.printmatic.repository.UserRepository;
 import me.xdrop.fuzzywuzzy.FuzzySearch;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -60,5 +61,22 @@ public class AdminService {
                 .extractTop(query, users.stream().map(SearchUserDTO::getEmail).toList(),5)
                 .forEach(extractedResult -> topFive.add(users.get(extractedResult.getIndex())));
         return topFive;
+    }
+
+    @Transactional
+    public MessageResponseDTO removeRole(String email, RoleEnum role) {
+        Optional<UserEntity> user = userRepository.findByEmail(email);
+        if (user.isEmpty()) {
+            return new MessageResponseDTO(404, "User not found");
+        }
+        RoleEntity roleEntity = roleRepository.findByName(role.name());
+        if (!user.get().getRoles().contains(roleEntity)) {
+            return new MessageResponseDTO(404, "This role is not granted to this user");
+        }
+        user.get().getRoles().remove(roleEntity);
+        roleEntity.getUsers().remove(user.get());
+        userRepository.save(user.get());
+        roleRepository.save(roleEntity);
+        return new MessageResponseDTO(200, "Role successfully removed from this user");
     }
 }
