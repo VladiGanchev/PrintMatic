@@ -41,3 +41,13 @@ export const getUserOrders = async (page = 0, size = 10) => {
     }
 }
 
+export const getOrderById = async(orderId) =>{
+    try{
+        const response = await api.get(`/api/order/user/${orderId}`)
+        return response.data;
+    }catch(error){
+        console.error("ERROR finding the order: ", error)
+        throw error.response?.data || 'Order cant be found'
+    }
+}
+

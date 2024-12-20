@@ -32,7 +32,7 @@ public class PaymentEntity {
     @Column
     private String stripeSessionId;
 
-    @ManyToOne(optional = false)
+    @ManyToOne(optional = false, fetch = FetchType.EAGER)
     @JoinColumn(name = "user_id")
     private UserEntity user;
 

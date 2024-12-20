@@ -47,10 +47,10 @@ public class OrderService {
     public OrderResultDTO createOrder(OrderCreationDTO orderCreationDTO, Principal principal) {
         Optional<UserEntity> user = userRepository.findByEmail(principal.getName());
         if (user.isEmpty()) {
-            return new OrderResultDTO(-1L,404, "User not found");
+            return new OrderResultDTO(-1L,BigDecimal.ZERO,404, "User not found");
         }
         if (orderCreationDTO.getDeadline() == null) {
-            return new OrderResultDTO(-1L,401, "Deadline not set");
+            return new OrderResultDTO(-1L,BigDecimal.ZERO,401, "Deadline not set");
         }
 
         int numberOfPages = orderCreationDTO.getTotalPages();
@@ -59,7 +59,7 @@ public class OrderService {
         int copies = orderCreationDTO.getCopies();
 
         if (colorfulPages + grayscalePages != numberOfPages) {
-            return new OrderResultDTO(-1L,400, "Invalid page count: sum of colorful and grayscale pages must equal total pages");
+            return new OrderResultDTO(-1L,BigDecimal.ZERO,400, "Invalid page count: sum of colorful and grayscale pages must equal total pages");
         }
 
         OrderEntity orderEntity = modelMapper.map(orderCreationDTO, OrderEntity.class);
@@ -89,7 +89,7 @@ public class OrderService {
 
         orderRepository.save(orderEntity);
 
-        return new OrderResultDTO(orderEntity.getId(),200, String.format(
+        return new OrderResultDTO(orderEntity.getId(),orderEntity.getPrice(),200, String.format(
                 "Order created successfully. Total price: %.2f BGN", price));
     }
 
@@ -237,5 +237,10 @@ public class OrderService {
             }
         }
         return new MessageResponseDTO(200,"Order status is correct");
+    }
+
+    public Optional<OrderDTO> getOrderById(Long id) {
+        Optional<OrderEntity> orderEntity = orderRepository.findById(id);
+        return orderEntity.map(entity -> modelMapper.map(entity, OrderDTO.class));
     }
 }

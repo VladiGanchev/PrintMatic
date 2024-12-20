@@ -22,6 +22,7 @@ import java.security.Principal;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("api/order")
@@ -37,12 +38,20 @@ public class OrderController {
     public ResponseEntity<OrderResultDTO> createOrder(@Valid @RequestBody OrderCreationDTO orderCreationDTO,
                                                       BindingResult bindingResult , Principal principal) {
         if(bindingResult.hasErrors()) {
-            return ResponseEntity.badRequest().body(
-                    new OrderResultDTO(-1L,400, bindingResult.getAllErrors().getFirst().getDefaultMessage()));
+            return ResponseEntity.badRequest().build();
         }
 
         OrderResultDTO result = orderService.createOrder(orderCreationDTO, principal);
         return ResponseEntity.status(result.getStatus()).body(result);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<OrderDTO> getOrder(@PathVariable Long id) {
+        Optional<OrderDTO> opt= orderService.getOrderById(id);
+        if (opt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(opt.get());
     }
 
 

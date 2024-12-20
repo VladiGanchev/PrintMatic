@@ -1,12 +1,17 @@
 package com.example.printmatic.config;
 
 import com.example.printmatic.dto.response.OrderDTO;
+import com.example.printmatic.dto.response.SearchUserDTO;
+import com.example.printmatic.dto.response.UserDTO;
 import com.example.printmatic.dto.response.UserOrderDTO;
 import com.example.printmatic.model.OrderEntity;
+import com.example.printmatic.model.RoleEntity;
+import com.example.printmatic.model.UserEntity;
 import lombok.AllArgsConstructor;
 import org.junit.jupiter.api.Order;
 import org.modelmapper.Converter;
 import org.modelmapper.ModelMapper;
+import org.modelmapper.PropertyMap;
 import org.modelmapper.spi.MappingContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -47,6 +52,8 @@ public class BeanConfig {
                     mapper.using(adjustTimeZone).map(OrderEntity::getCreatedAt, OrderDTO::setCreatedAt);
                     mapper.using(adjustTimeZone).map(OrderEntity::getDeadline, OrderDTO::setDeadline);
                 });
+
+
 
         return modelMapper;
     }

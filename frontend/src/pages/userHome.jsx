@@ -67,8 +67,16 @@ export default function UserHome() {
 
         console.log(orderData)
 
-        await createOrder(orderData)
-        navigate("/userPayment")
+        const createResult = await createOrder(orderData)
+        const price = createResult.price
+        const orderId = createResult.orderId
+        navigate("/userPayment",{
+          state:{
+            orderData: orderData,
+            price: price,
+            orderId: orderId
+          }
+        })
 
     }catch(error){
       setError(error.message || "Възникна грешка");

@@ -1,4 +1,4 @@
-import { FaCheckCircle, FaHourglassHalf, FaClock, FaTimesCircle, FaMoneyBillWave } from "react-icons/fa";
+import { FaCheckCircle, FaHourglassHalf, FaClock, FaTimesCircle, FaMoneyBillWave, FaMoneyBill } from "react-icons/fa";
 import HeaderUser from "../components/headerUser";
 import { useEffect, useState } from "react";
 import { getUserOrders } from "../services/orderService";
@@ -14,6 +14,8 @@ export default function UserHistory() {
 
   const getStatusIcon = (status) => {
     switch (status) {
+      case 'UNPAID': 
+        return <FaMoneyBill className="text-red-500 text-md" />
       case 'COMPLETED':
         return <FaCheckCircle className="text-green-500 text-md" />;
       case 'IN_PROGRESS':
@@ -98,6 +100,7 @@ export default function UserHistory() {
                 <p className="text-md font-bold">{order.title}</p>
                 <div className="flex flex-row gap-1 items-center">
                   <p className="text-md">Статус: {
+                    order.status === 'UNPAID' ? 'Неплатена':
                     order.status === 'PENDING' ? 'Изчакващ' :
                     order.status === 'IN_PROGRESS' ? 'В процес' :
                     order.status === 'COMPLETED' ? 'Завършена' :
