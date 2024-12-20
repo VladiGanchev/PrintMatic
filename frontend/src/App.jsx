@@ -11,15 +11,16 @@ import UserProfile from "./pages/userProfile";
 import LoginPage from "./pages/LoginPage"
 import BalancePayment from "./pages/BalancePayment";
 import StripePayment from "./pages/StripePayment";
+import EmployeeScreen from "./pages/employeePanel";
+import AdminPanel from "./pages/adminPanel";
 
 function App() {
   return (
     <Routes>
-
       <Route path="/" element={<Home />} />
 
       <Route path="/register" element={<RegisterPage />} />
-      <Route path="/login" element={<LoginPage />}/>
+      <Route path="/login" element={<LoginPage />} />
       <Route path="/userHome" element={<UserHome />} />
       <Route path="/userPayment" element={<UserPayment />} />
       <Route path="/userNotifications" element={<UserNotifications />} />
@@ -27,6 +28,8 @@ function App() {
       <Route path="/userProfile" element={<UserProfile />} />
       <Route path="/balancePayment" element={<BalancePayment/>}/>
       <Route path='/stripePayment/:orderId' element={<StripePayment/>}/>
+      <Route path="/employeePanel" element={<EmployeeScreen />} />
+      <Route path="/adminPanel" element={<AdminPanel />} />
 
       <Route path="*" element={<h1>404 Not Found</h1>} />
     </Routes>
