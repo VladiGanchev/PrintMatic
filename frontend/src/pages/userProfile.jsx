@@ -88,6 +88,13 @@ export default function UserProfile() {
     }
   };
 
+  const formatPrice = (number) => {
+    return new Intl.NumberFormat('bg-BG', {
+      style: 'currency',
+      currency: 'BGN'
+    }).format(number);
+  }
+
 
   if (isLoading) {
     return (
@@ -115,7 +122,7 @@ export default function UserProfile() {
             <div className="flex flex-col ml-4">
               <p className="text-3xl font-bold">{updateData.firstName} {updateData.lastName}</p>
               <p className="text-md">
-                Баланс: <b>{balance} лв.</b>
+                Баланс: <b>{formatPrice(balance)}</b>
               </p>
             </div>
           </div>

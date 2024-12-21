@@ -2,9 +2,12 @@ package com.example.printmatic.controler;
 
 import com.example.printmatic.dto.request.OrderPaymentSuccessDTO;
 import com.example.printmatic.dto.response.MessageResponseDTO;
+import com.example.printmatic.dto.response.PaymentDTO;
 import com.example.printmatic.dto.response.SessionResponseDTO;
 import com.example.printmatic.service.PaymentService;
 import jakarta.websocket.server.PathParam;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -66,5 +69,12 @@ public class PaymentController {
             return ResponseEntity.internalServerError().build();
         }
     }
+
+    @GetMapping("getPayments")
+    public ResponseEntity<Page<PaymentDTO>> getPayments(Principal principal,
+                                                        Pageable pageable) {
+        return ResponseEntity.ok(paymentService.getPayments(principal, pageable));
+    }
+
 
 }

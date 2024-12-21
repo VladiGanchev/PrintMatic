@@ -14,7 +14,7 @@ export default function UserHistory() {
 
   const getStatusIcon = (status) => {
     switch (status) {
-      case 'UNPAID': 
+      case 'UNPAID':
         return <FaMoneyBill className="text-red-500 text-md" />
       case 'COMPLETED':
         return <FaCheckCircle className="text-green-500 text-md" />;
@@ -59,6 +59,13 @@ export default function UserHistory() {
     return new Date(dateString).toLocaleDateString('bg-BG')
   }
 
+  const formatPrice = (number) => {
+    return new Intl.NumberFormat('bg-BG', {
+      style: 'currency',
+      currency: 'BGN'
+    }).format(number);
+  }
+
   if (isLoading) {
     return (
       <div className="w-screen h-screen flex flex-row hover:cursor-default">
@@ -100,24 +107,24 @@ export default function UserHistory() {
                 <p className="text-md font-bold">{order.title}</p>
                 <div className="flex flex-row gap-1 items-center">
                   <p className="text-md">Статус: {
-                    order.status === 'UNPAID' ? 'Неплатена':
-                    order.status === 'PENDING' ? 'Изчакващ' :
-                    order.status === 'IN_PROGRESS' ? 'В процес' :
-                    order.status === 'COMPLETED' ? 'Завършена' :
-                    order.status === 'CANCELED' ? 'Отказана' :
-                    order.status === 'REJECTED' ? 'Отхвърлена' :
-                    order.status === 'REFUNDED' ? 'Възстановена' :
-                    order.status
+                    order.status === 'UNPAID' ? 'Неплатена' :
+                      order.status === 'PENDING' ? 'Изчакващ' :
+                        order.status === 'IN_PROGRESS' ? 'В процес' :
+                          order.status === 'COMPLETED' ? 'Завършена' :
+                            order.status === 'CANCELED' ? 'Отказана' :
+                              order.status === 'REJECTED' ? 'Отхвърлена' :
+                                order.status === 'REFUNDED' ? 'Възстановена' :
+                                  order.status
                   }</p>
                   {getStatusIcon(order.status)}
                 </div>
                 <p className="text-md">Дата на поръчка: {formatDate(order.createdAt)}</p>
                 <p className="text-md">Крайна дата за изпълнение: {formatDate(order.deadline)}</p>
-                <p className="text-md">Цена: {order.price} лв.</p>
+                <p className="text-md">Цена: {formatPrice(order.price)}</p>
               </a>
             )))}
         </div>
-        
+
         {totalPages > 1 && (
           <div className="flex justify-center mt-8 gap-2 pb-8">
             <button

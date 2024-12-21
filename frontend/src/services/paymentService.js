@@ -29,3 +29,13 @@ export const orderPaymentSuccess = async(orderPaymentDetails) =>{
         throw error.response?.data || 'Payment whit stripe failed'
     }
 }
+
+export const getUserPayments = async(page, size) =>{
+    try{
+        const response = await api.get(`api/payment/getPayments?page=${page}&size=${size}`)
+        return response.data;
+    }catch(error){
+        console.error("ERROR getting payments for the user: ", error)
+        throw error.response?.data || 'Getting payment failed'
+    }
+}

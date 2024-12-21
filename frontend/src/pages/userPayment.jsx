@@ -31,6 +31,13 @@ export default function userPayment() {
   const price = location.state?.price
   const orderId  = location.state?.orderId
 
+  const formatPrice = (number) => {
+    return new Intl.NumberFormat('bg-BG', {
+      style: 'currency',
+      currency: 'BGN'
+    }).format(number);
+  }
+
   useEffect(() => {
     console.log('Location State:', location.state);
   }, [location.state]);
@@ -103,7 +110,7 @@ export default function userPayment() {
               <div className="flex justify-between items-center">
                 <span className="text-xl font-semibold">Обща сума:</span>
                 <span className="text-2xl font-bold text-primary">
-                  {price} лв.
+                  {formatPrice(price)}
                 </span>
               </div>
             </div>

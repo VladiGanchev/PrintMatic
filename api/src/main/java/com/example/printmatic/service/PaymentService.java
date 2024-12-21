@@ -2,6 +2,7 @@ package com.example.printmatic.service;
 
 import com.example.printmatic.dto.request.OrderPaymentSuccessDTO;
 import com.example.printmatic.dto.response.MessageResponseDTO;
+import com.example.printmatic.dto.response.PaymentDTO;
 import com.example.printmatic.dto.response.SessionResponseDTO;
 import com.example.printmatic.enums.OrderStatus;
 import com.example.printmatic.enums.PaymentType;
@@ -19,7 +20,10 @@ import com.stripe.model.checkout.Session;
 import com.stripe.param.checkout.SessionCreateParams;
 import jakarta.persistence.LockModeType;
 import lombok.extern.slf4j.Slf4j;
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,14 +42,16 @@ public class PaymentService {
     private final UserRepository userRepository;
     private final OrderRepository orderRepository;
     private final PaymentRepository paymentRepository;
+    private final ModelMapper modelMapper;
 
     @Value("${STRIPE_SECRET_KEY}")
     private String stripeKey;
 
-    public PaymentService(UserRepository userRepository, OrderRepository orderRepository, PaymentRepository paymentRepository) {
+    public PaymentService(UserRepository userRepository, OrderRepository orderRepository, PaymentRepository paymentRepository, ModelMapper modelMapper) {
         this.userRepository = userRepository;
         this.orderRepository = orderRepository;
         this.paymentRepository = paymentRepository;
+        this.modelMapper = modelMapper;
     }
 
     @PostConstruct
@@ -251,5 +257,10 @@ public class PaymentService {
 
         return new MessageResponseDTO(200, "Payment from balance successful");
 
+    }
+
+    public Page<PaymentDTO> getPayments(Principal principal, Pageable pageable) {
+        return paymentRepository.findByUserEmailOrderByPaidAt(principal.getName(), pageable)
+                .map(paymentEntity -> modelMapper.map(paymentEntity, PaymentDTO.class));
     }
 }
