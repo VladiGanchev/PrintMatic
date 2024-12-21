@@ -2,10 +2,18 @@ import React from "react";
 import { useState } from "react";
 import toast, { Toaster } from 'react-hot-toast';
 import { grantRoleToUser, searchByEmail, removeRoleToUser } from "../services/adminService";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 export default function AdminPanel() {
+  let navigate = useNavigate()
+
+  const {hasAnyRole} = useAuth();
   const [users, setUsers] = useState([])
 
+  if (!hasAnyRole(['ADMIN'])) {
+    navigate("/unauthorize")
+  }
 
   const handleSearch = async (e) => {
     const query = e.target.value
