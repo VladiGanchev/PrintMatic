@@ -16,6 +16,7 @@ const RegisterPage = () => {
       const data = await loginUser(userData);
       navigate('/userHome')
       console.log("User logged in successfully:", data);
+      window.location.reload()
     } catch (error) {
       console.error("Login error: ", error);
       setErrorMessage(

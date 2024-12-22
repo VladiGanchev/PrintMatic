@@ -3,8 +3,13 @@ import { ordersPendingOrInProgress, downloadFile, updateOrderStatus } from "../s
 import { IoChevronDown, IoChevronUp, IoDownload, IoCheckmarkOutline } from "react-icons/io5";
 import { TbCancel, TbProgress } from "react-icons/tb";
 import OrderStatusButtons from "../components/OrderStatusButtons";
+import { useAuth } from "../context/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 export default function EmployeeScreen() {
+  let navigate = useNavigate()
+
+  const { hasAnyRole } = useAuth();
   const [orders, setOrders] = useState([]);
   const [sortBy, setSortBy] = useState("DEADLINE");
   const [currentPage, setCurrentPage] = useState(0);
@@ -13,6 +18,10 @@ export default function EmployeeScreen() {
   const [error, setError] = useState(null);
   const [expandedRows, setExpandedRows] = useState(new Set());
   const pageSize = 10;
+
+  if (!hasAnyRole(['ADMIN', 'EMPLOYEE'])) {
+    navigate("/unauthorize")
+  }
 
   const fetchOrders = async (page) => {
     try {
@@ -169,6 +178,10 @@ export default function EmployeeScreen() {
                               <ul className="space-y-2">
                                 <li>Брой копия: {order.copies}</li>
                                 <li>Двустранно: {order.doubleSided ? 'Да' : 'Не'}</li>
+                                <li>Цветно: {order.colorfulPages > 0 ? 
+                                ('Да ('+ order.colorfulPages +' цветни, ' + order.grayscalePages + ' черно-бели)') 
+                                :
+                                 'Не'}</li>
                                 <li>Размер на хартия: {order.pageSize}</li>
                                 <li>Тип хартия: {translatePaperType(order.paperType)}</li>
                               </ul>

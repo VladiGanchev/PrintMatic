@@ -9,12 +9,11 @@ export default function HeaderHome() {
         PrintMatic
       </a>
       <div className="flex flex-row items-center pr-8 gap-8">
-        <a className="text-white font-bold hover:underline" href="/home">
+        <a className="text-white font-bold hover:underline">
           Начало
         </a>
         <a
           className="text-white font-bold hover:underline"
-          href="/home#services"
         >
           Услуги
         </a>

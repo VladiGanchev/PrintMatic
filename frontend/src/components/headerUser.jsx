@@ -1,14 +1,20 @@
+import { useAuth } from "../context/AuthContext";
+
 import {
   FaBell,
   FaHistory,
   FaHome,
   FaSignOutAlt,
   FaUser,
+  FaUserCog,
+  FaClipboardList
 } from "react-icons/fa";
 
-export default function HeaderUser() {
 
-  const handleClick = () =>{
+export default function HeaderUser() {
+  const { hasRole, hasAnyRole } = useAuth();
+
+  const handleClick = () => {
     localStorage.clear()
   }
 
@@ -40,6 +46,29 @@ export default function HeaderUser() {
             Профил
           </a>
         </div>
+        <div className="flex flex-col gap-2 mt-10">
+          {hasAnyRole(['EMPLOYEE', 'ADMIN']) && (
+            <div className="flex flex-row gap-2 items-center">
+              <FaClipboardList className="text-white" />
+              <a className="text-white hover:underline" href="/employeePanel">
+                Служителски панел
+              </a>
+            </div>
+          )
+          }
+
+          {hasRole('ADMIN') && (
+            <div className="flex flex-row gap-2 items-center">
+              <FaUserCog className="text-white w-4 h-4" />
+              <a className="text-white hover:underline" href="/adminPanel">
+                Администраторски панел
+              </a>
+            </div>
+          )
+          }
+
+        </div>
+
       </div>
       <div className="flex flex-row items-center gap-4" onClick={handleClick}>
         <FaSignOutAlt className="text-white" />
