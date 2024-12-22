@@ -19,6 +19,8 @@ public class OrderDTO {
     private boolean doubleSided;
     private PageSize pageSize;
     private PaperType paperType;
+    private Integer colorfulPages;
+    private Integer grayscalePages;
     private String additionalInfo;
     private OrderStatus status;
     private LocalDateTime createdAt;

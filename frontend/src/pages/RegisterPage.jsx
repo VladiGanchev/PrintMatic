@@ -29,6 +29,7 @@ const RegisterPage = () => {
         password: userData.password,
       });
       console.log("User logged in successfully:", loginData);
+      navigate("/userHome")
     } catch (error) {
       console.error("Registration error: ", error);
       setErrorMessage(

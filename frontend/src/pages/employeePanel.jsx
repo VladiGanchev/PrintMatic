@@ -9,7 +9,7 @@ import { useNavigate } from "react-router-dom";
 export default function EmployeeScreen() {
   let navigate = useNavigate()
 
-  const {hasAnyRole} = useAuth();
+  const { hasAnyRole } = useAuth();
   const [orders, setOrders] = useState([]);
   const [sortBy, setSortBy] = useState("DEADLINE");
   const [currentPage, setCurrentPage] = useState(0);
@@ -178,6 +178,10 @@ export default function EmployeeScreen() {
                               <ul className="space-y-2">
                                 <li>Брой копия: {order.copies}</li>
                                 <li>Двустранно: {order.doubleSided ? 'Да' : 'Не'}</li>
+                                <li>Цветно: {order.colorfulPages > 0 ? 
+                                ('Да ('+ order.colorfulPages +' цветни, ' + order.grayscalePages + ' черно-бели)') 
+                                :
+                                 'Не'}</li>
                                 <li>Размер на хартия: {order.pageSize}</li>
                                 <li>Тип хартия: {translatePaperType(order.paperType)}</li>
                               </ul>
