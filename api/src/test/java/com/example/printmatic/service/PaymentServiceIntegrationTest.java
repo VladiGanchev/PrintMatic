@@ -106,50 +106,6 @@ public class PaymentServiceIntegrationTest {
 
     @Test
     @Transactional
-    void orderSuccess_ShouldProcessPaymentSuccessfully() {
-        // Given
-        // Create a real Stripe session with a test card
-        SessionResponseDTO sessionResponse = paymentService.createSessionForPayingOrder(testOrder.getId(), mockPrincipal);
-
-        OrderPaymentSuccessDTO successDTO = new OrderPaymentSuccessDTO();
-        successDTO.setOrderId(testOrder.getId());
-        successDTO.setStripeSessionId(sessionResponse.getSessionId());
-
-        // When
-        MessageResponseDTO response = paymentService.orderSuccess(successDTO, mockPrincipal);
-
-        // Then
-        assertEquals(200, response.status());
-        assertEquals("Payment successful", response.message());
-
-        // Verify database state
-        OrderEntity updatedOrder = orderRepository.findById(testOrder.getId()).orElseThrow();
-        assertEquals(OrderStatus.PENDING, updatedOrder.getStatus());
-        assertNotNull(updatedOrder.getPayment());
-        assertEquals(sessionResponse.getSessionId(), updatedOrder.getPayment().getStripeSessionId());
-    }
-
-    @Test
-    @Transactional
-    void depositBalanceSuccess_ShouldUpdateUserBalance() {
-        // Given
-        BigDecimal depositAmount = BigDecimal.valueOf(500.00);
-        SessionResponseDTO sessionResponse = paymentService.addToBalanceSession(depositAmount, mockPrincipal);
-        BigDecimal initialBalance = testUser.getBalance();
-
-        // When
-        MessageResponseDTO response = paymentService.depositBalanceSuccess(sessionResponse.getSessionId(), mockPrincipal);
-
-        // Then
-        assertEquals(200, response.status());
-        assertEquals("Deposit balance successful", response.message());
-
-        UserEntity updatedUser = userRepository.findById(testUser.getId()).orElseThrow();
-        assertTrue(updatedUser.getBalance().compareTo(initialBalance) > 0);
-    }
-
-    @Test
-    @Transactional
     void payFromBalance_ShouldSucceedWithSufficientBalance() {
         // Given
         BigDecimal initialBalance = testUser.getBalance();

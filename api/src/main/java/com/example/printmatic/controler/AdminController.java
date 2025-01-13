@@ -12,6 +12,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/admin")
+@PreAuthorize("hasAnyAuthority('ADMIN')")
 public class AdminController {
 
     private final AdminService adminService;
@@ -21,7 +22,6 @@ public class AdminController {
     }
 
     @PostMapping("grantRole")
-    @PreAuthorize("hasAnyAuthority('ADMIN')")
     public ResponseEntity<MessageResponseDTO> grantRole(
             @RequestParam(value = "email" , required = true) String email,
             @RequestParam(value = "role", required = true) RoleEnum role) {

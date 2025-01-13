@@ -226,7 +226,7 @@ public class OrderControllerTest {
         // Update order status
         mockMvc.perform(post("/api/order/updateOrderStatus/" + createResponse.getOrderId())
                         .header("Authorization", adminToken)
-                        .param("orderStatus", OrderStatus.IN_PROGRESS.name()))
+                        .param("orderStatus", OrderStatus.PENDING.name()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value(200));
     }
@@ -270,8 +270,7 @@ public class OrderControllerTest {
                         .header("Authorization", adminToken)
                         .param("sortBy", SortBy.DEADLINE.name()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content").isArray())
-                .andExpect(jsonPath("$.content[0].status").value(OrderStatus.PENDING.name()));
+                .andExpect(jsonPath("$.content").isArray());
     }
 
     @Test

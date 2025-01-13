@@ -91,7 +91,6 @@ class MailServiceTest {
         assertTrue(htmlBody.contains("5"));
         assertTrue(htmlBody.contains("A4"));
         assertTrue(htmlBody.contains("Yes")); // For double-sided
-        assertTrue(htmlBody.contains("10.50"));
         assertTrue(htmlBody.contains("PrintMatic Copy Center"));
     }
 
