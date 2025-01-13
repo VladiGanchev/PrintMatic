@@ -210,9 +210,6 @@ public class OrderService {
 
     private MessageResponseDTO validateStatus(OrderStatus updateStatus, OrderStatus currentStatus) {
         switch (updateStatus) {
-            case PENDING -> {
-                return new MessageResponseDTO(400, "Order status cannot be updated to pending as it's an initial state");
-            }
             case IN_PROGRESS -> {
                 if (currentStatus == OrderStatus.PENDING) {
                     break;
