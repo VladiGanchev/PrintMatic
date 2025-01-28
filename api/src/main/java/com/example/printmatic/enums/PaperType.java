@@ -5,5 +5,5 @@ public enum PaperType {
     GLOSSY,
     BRIGHT_WHITE,
     PHOTO,
-    HEAVYWEIGHT
+    HEAVYWEIGHT,
 }
