@@ -69,18 +69,20 @@ export default function UserHome() {
 
         const createResult = await createOrder(orderData)
         const price = createResult.price
+        const formula = createResult.formula
         const orderId = createResult.orderId
         navigate("/userPayment",{
           state:{
             orderData: orderData,
             price: price,
+            formula: formula,
             orderId: orderId
           }
         })
 
     }catch(error){
       setError(error.message || "Възникна грешка");
-      Console.log(error)
+      console.log(error)
     }finally{
       setIsLoading(false);
     }

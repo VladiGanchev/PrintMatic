@@ -67,6 +67,16 @@ export default function HeaderUser() {
           )
           }
 
+          {hasRole('ADMIN') && (
+              <div className="flex flex-row gap-2 items-center">
+                <FaUserCog className="text-white w-4 h-4" />
+                <a className="text-white hover:underline" href="/admin/services">
+                  Панел с услуги
+                </a>
+              </div>
+          )
+          }
+
         </div>
 
       </div>
