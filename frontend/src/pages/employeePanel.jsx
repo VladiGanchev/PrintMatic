@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { ordersPendingOrInProgress, downloadFile, updateOrderStatus } from "../services/orderService";
-import { IoChevronDown, IoChevronUp, IoDownload, IoCheckmarkOutline } from "react-icons/io5";
-import { TbCancel, TbProgress } from "react-icons/tb";
+import { IoChevronDown, IoChevronUp, IoDownload } from "react-icons/io5";
 import OrderStatusButtons from "../components/OrderStatusButtons";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
