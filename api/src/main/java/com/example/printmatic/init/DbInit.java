@@ -10,15 +10,19 @@ import org.springframework.stereotype.Controller;
 public class DbInit implements CommandLineRunner {
     private final UserService userService;
     private final ServicePriceService servicePriceService;
+    private final DbInitDiscounts dbInitDiscounts;
 
-    public DbInit(UserService userService, ServicePriceService servicePriceService) {
+    public DbInit(UserService userService, ServicePriceService servicePriceService, DbInitDiscounts dbInitDiscounts) {
         this.userService = userService;
         this.servicePriceService = servicePriceService;
+        this.dbInitDiscounts = dbInitDiscounts;
     }
 
     @Override
     public void run(String... args) throws Exception {
         userService.seedUsers();
         servicePriceService.seedServices();
+        dbInitDiscounts.seedDiscounts();
+
     }
 }

@@ -16,6 +16,8 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.security.Principal;
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -24,10 +26,13 @@ public class ServicePriceService {
 
     private final ServicePriceRepository servicePriceRepository;
     private final UserRepository userRepository;
+    private final DiscountService discountService;
 
-    public ServicePriceService(ServicePriceRepository servicePriceRepository, UserRepository userRepository) {
+
+    public ServicePriceService(ServicePriceRepository servicePriceRepository, UserRepository userRepository, DiscountService discountService) {
         this.servicePriceRepository = servicePriceRepository;
         this.userRepository = userRepository;
+        this.discountService = discountService;
     }
 
     public ServicePriceResultDTO updateServicePrice(Long servicePriceId, ServicePriceDTO servicePriceDTO, Principal principal) {
@@ -104,23 +109,24 @@ public class ServicePriceService {
             ServicePriceEntity brightWhite = new ServicePriceEntity(null, ServiceEnum.BRIGHT_WHITE, PriceType.MULTIPLIER, 1.5);
             ServicePriceEntity photo = new ServicePriceEntity(null, ServiceEnum.PHOTO, PriceType.MULTIPLIER, 12.0);
             ServicePriceEntity heavyweight = new ServicePriceEntity(null, ServiceEnum.HEAVYWEIGHT, PriceType.MULTIPLIER, 2.5);
-            ServicePriceEntity oneHour = new ServicePriceEntity(null, ServiceEnum.ONE_HOUR, PriceType.MULTIPLIER, 1.2);
+           /* ServicePriceEntity oneHour = new ServicePriceEntity(null, ServiceEnum.ONE_HOUR, PriceType.MULTIPLIER, 1.2);
             ServicePriceEntity oneDay = new ServicePriceEntity(null, ServiceEnum.ONE_DAY, PriceType.MULTIPLIER, 1.1);
             ServicePriceEntity threeDays = new ServicePriceEntity(null, ServiceEnum.THREE_DAYS, PriceType.MULTIPLIER, 1.0);
             ServicePriceEntity oneWeek = new ServicePriceEntity(null, ServiceEnum.ONE_WEEK, PriceType.MULTIPLIER, 0.9);
-
+*/
             // Add service to DB
             servicePriceRepository.saveAll(List.of(A3, A4, A5));
             servicePriceRepository.saveAll(List.of(grayscale, color));
             servicePriceRepository.saveAll(List.of(regularMatte, glossy, brightWhite, photo, heavyweight));
-            servicePriceRepository.saveAll(List.of(oneHour, oneDay, threeDays, oneWeek));
+           // servicePriceRepository.saveAll(List.of(oneHour, oneDay, threeDays, oneWeek));
         }
     }
 
     public String generateCalculatedFormulaForPrice(
             OrderCreationDTO order, BigDecimal pricePerPage, Integer numberOfGrayscalePages,
             BigDecimal grayscaleMultiplier, Integer numberOfColorPages, BigDecimal colorMultiplier,
-            BigDecimal paperTypeMultiplier, BigDecimal deadlineMultiplier, BigDecimal discount, Integer copies) {
+            BigDecimal paperTypeMultiplier, BigDecimal deadlineMultiplier, Integer copies,
+            List<String> appliedDiscounts, BigDecimal basePrice, BigDecimal finalPrice) {
         // Write total price formula
         // grayscalePagesPrice = pricePerPage * numberOfGrayscalePages * grayscaleMultiplier
         // colorPagesPrice = pricePerPage * numberOfColorPages * colorMultiplier
@@ -129,55 +135,50 @@ public class ServicePriceService {
         String pageSizeInBulgarian = ServiceEnum.valueOf(order.getPageSize().name()).bulgarianName();
         String paperTypeInBulgarian = ServiceEnum.valueOf(order.getPaperType().name()).bulgarianName();
         String deadlineInBulgarian = ServiceEnum.valueOf(order.getDeadline().name()).bulgarianName();
-
-        return String.format(
+        StringBuilder formula = new StringBuilder(String.format(
                 """
                         (Цена на %s страница * Брой черно-бели страници * Надценка за черно-бели страници
                         + Цена на %s страница * Брой цветни страници * Надценка за цветни страници)
-                        * Надценка за тип хартия - %s * Надценка за срок - %s * Брой копия * Oтстъпка
-                        (%.0f ст. * %d * %.2f + %.0f ст. * %d * %.2f) * %.2f * %.2f * %d * %.2f""",
+                        * Надценка за тип хартия - %s * Надценка за срок - %s * Брой копия
+                        (%.0f ст. * %d * %.2f + %.0f ст. * %d * %.2f) * %.2f * %.2f * %d = %.2f лв.""",
                 pageSizeInBulgarian, pageSizeInBulgarian,
                 paperTypeInBulgarian, deadlineInBulgarian,
                 toCents(pricePerPage), numberOfGrayscalePages, grayscaleMultiplier,
                 toCents(pricePerPage), numberOfColorPages, colorMultiplier,
-                paperTypeMultiplier, deadlineMultiplier, copies, discount
-        );
+                paperTypeMultiplier, deadlineMultiplier, copies, basePrice));
+
+        // check if a discount was applied
+        if (basePrice.compareTo(finalPrice) != 0) {
+            formula.append("\nПриложени отстъпки:");
+            for (String discount : appliedDiscounts) {
+                formula.append("\n- ").append(discount);
+            }
+            formula.append(String.format("\nКрайна цена след отстъпки: %.2f лв.", finalPrice));
+        }
+
+        return formula.toString();
+
     }
 
     private BigDecimal toCents(BigDecimal number) {
         return number.multiply(BigDecimal.valueOf(100));
     }
 
-    public Pair<BigDecimal, String> calculateOrderPrice(OrderCreationDTO order, Integer copies) {
+    public Pair<BigDecimal, String> calculateOrderPrice(OrderCreationDTO order, Integer copies, Optional<UserEntity> user) {
         // Get all services
         List<ServicePriceEntity> servicePriceEntities = servicePriceRepository.findAll();
         if (servicePriceEntities.isEmpty()) {
             throw new EntityNotFoundException("Service price entities not found.");
         }
 
-        // Determine price per page
+        // Calculate base components
         BigDecimal pricePerPage = getPricePerPage(servicePriceEntities, order.getPageSize());
-
-        // Determine grayscale multiplier
         BigDecimal grayscaleMultiplier = getMultiplierForPageColor(servicePriceEntities, PageColor.GRAYSCALE);
-
-        // Determine colored page multiplier
         BigDecimal colorMultiplier = getMultiplierForPageColor(servicePriceEntities, PageColor.COLOR);
-
-        // Determine paper type multiplier
         BigDecimal paperTypeMultiplier = getMultiplierForPaperType(servicePriceEntities, order.getPaperType());
-
-        // Determine deadline multiplier
         BigDecimal deadlineMultiplier = getMultiplierForDeadline(servicePriceEntities, order.getDeadline());
 
-        // Determine discounts - TODO: implement
-        BigDecimal discount = BigDecimal.valueOf(1);
-
-        // Calculate total price
-        // grayscalePagesPrice = pricePerPage * numberOfGrayscalePages * grayscaleMultiplier
-        // colorPagesPrice = pricePerPage * numberOfColorPages * colorMultiplier
-        // finalPrice = (grayscalePagesPrice + colorPagesPrice) * paperTypeMultiplier * deadlineMultiplier * copies * discount
-
+        // Calculate prices for different page types
         BigDecimal grayscalePagesPrice = pricePerPage
                 .multiply(BigDecimal.valueOf(order.getGrayscalePages()))
                 .multiply(grayscaleMultiplier);
@@ -186,15 +187,28 @@ public class ServicePriceService {
                 .multiply(colorMultiplier);
         BigDecimal allPagesPrice = grayscalePagesPrice.add(colorPagesPrice);
 
-        BigDecimal finalPrice = allPagesPrice
+        // Calculate base price before discounts
+        BigDecimal basePrice = allPagesPrice
                 .multiply(paperTypeMultiplier)
                 .multiply(deadlineMultiplier)
-                .multiply(BigDecimal.valueOf(copies))
-                .multiply(discount);
+                .multiply(BigDecimal.valueOf(copies));
+
+        // Apply discounts if user is present
+        BigDecimal finalPrice = basePrice;
+        List<String> appliedDiscounts = new ArrayList<>();
+
+        if (user.isPresent()) {
+            int totalPages = order.getGrayscalePages() * order.getCopies() + order.getColorfulPages();
+            Pair<BigDecimal, List<String>> discountResult =
+                    discountService.calculateFinalPrice(basePrice, totalPages, user.get(), order.getDeadline());
+            finalPrice = discountResult.getLeft();
+            appliedDiscounts = discountResult.getRight();
+        }
 
         String finalPriceFormula = generateCalculatedFormulaForPrice(
                 order, pricePerPage, order.getGrayscalePages(), grayscaleMultiplier,
-                order.getColorfulPages(), colorMultiplier, paperTypeMultiplier, deadlineMultiplier, discount, copies);
+                order.getColorfulPages(), colorMultiplier, paperTypeMultiplier,
+                deadlineMultiplier, copies, appliedDiscounts, basePrice, finalPrice);
 
         return Pair.of(finalPrice, finalPriceFormula);
     }

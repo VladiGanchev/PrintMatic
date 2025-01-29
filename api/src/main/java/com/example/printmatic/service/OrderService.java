@@ -68,7 +68,7 @@ public class OrderService {
         orderEntity.setOwner(user.get());
         orderEntity.setStatus(OrderStatus.UNPAID);
 
-        Pair<BigDecimal, String> price = servicePriceService.calculateOrderPrice(orderCreationDTO, copies);
+        Pair<BigDecimal, String> price = servicePriceService.calculateOrderPrice(orderCreationDTO, copies, user);
 
         orderEntity.setPrice(price.getLeft());
 
@@ -98,6 +98,8 @@ public class OrderService {
         if (allGrayscalePages >= 21) return BigDecimal.valueOf(0.9);  // 10% discount for 21-100 pages
         return BigDecimal.ONE;                             // No discount for 1-20 pages
     }
+
+    //  TODO: Implement other colors deiscounts
 
     public Page<OrderDTO> getOrders(SortBy sortBy, Pageable pageable) {
         //order by deadline
