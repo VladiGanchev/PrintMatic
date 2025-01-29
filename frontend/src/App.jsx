@@ -13,6 +13,8 @@ import BalancePayment from "./pages/BalancePayment";
 import StripePayment from "./pages/StripePayment";
 import EmployeeScreen from "./pages/employeePanel";
 import AdminPanel from "./pages/adminPanel";
+import ServicesPanel from "./pages/servicesPanel";
+import DiscountsPanel from "./pages/discountPanel";
 import UnauthorizedPage from "./pages/UnauthorizedPage";
 import { AuthProvider } from "./context/AuthContext";
 
@@ -33,6 +35,8 @@ function App() {
         <Route path='/stripePayment/:orderId' element={<StripePayment />} />
         <Route path="/employeePanel" element={<EmployeeScreen />} />
         <Route path="/adminPanel" element={<AdminPanel />} />
+        <Route path="/admin/services" element={<ServicesPanel />} />
+        <Route path="/admin/discounts" element={<DiscountsPanel />} />
         <Route path="/unauthorize" element={<UnauthorizedPage />}/>
 
         <Route path="*" element={<h1>404 Not Found</h1>} />

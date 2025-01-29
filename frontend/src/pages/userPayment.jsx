@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { payOrderFromBalance, createOrderPaymentSession } from '../services/paymentService';
-import HeaderUser from '../components/headerUser';
-import { GrOrderedList } from 'react-icons/gr';
 
 const PAPER_TYPE_LABELS = {
   REGULAR_MATE: "Стандартна",
@@ -29,6 +27,7 @@ export default function userPayment() {
 
   const orderData = location.state?.orderData
   const price = location.state?.price
+  const formula = location.state?.formula
   const orderId  = location.state?.orderId
 
   const formatPrice = (number) => {
@@ -108,6 +107,15 @@ export default function userPayment() {
 
             <div className="mt-6 pt-6 border-t">
               <div className="flex justify-between items-center">
+                <span className="text-s font-bold">Формула за пресмятане на цената:</span>
+                <span className="text-xs font-semibold text-primary whitespace-pre-wrap">
+                  {formula}
+                </span>
+              </div>
+            </div>
+
+            <div className="mt-6 pt-6 border-t">
+              <div className="flex justify-between items-center">
                 <span className="text-xl font-semibold">Обща сума:</span>
                 <span className="text-2xl font-bold text-primary">
                   {formatPrice(price)}
@@ -121,7 +129,7 @@ export default function userPayment() {
             <div className="space-y-4">
               <label className="flex items-center p-4 border rounded-lg cursor-pointer hover:bg-gray-50">
                 <input
-                  type="radio"
+                    type="radio"
                   name="payment"
                   value="stripe"
                   checked={paymentMethod === 'stripe'}

@@ -5,15 +5,15 @@ import com.example.printmatic.enums.PageSize;
 import com.example.printmatic.enums.PaperType;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Setter
+@Getter
 public class OrderCreationDTO {
 
     @NotNull(message = "The title has to be present")

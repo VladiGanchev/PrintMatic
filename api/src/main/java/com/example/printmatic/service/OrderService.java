@@ -11,11 +11,11 @@ import com.example.printmatic.model.OrderEntity;
 import com.example.printmatic.model.UserEntity;
 import com.example.printmatic.repository.OrderRepository;
 import com.example.printmatic.repository.UserRepository;
+import org.apache.commons.lang3.tuple.Pair;
 import org.modelmapper.ModelMapper;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -31,28 +31,28 @@ public class OrderService {
     private final MailService mailService;
     private final ModelMapper modelMapper;
     private final UserRepository userRepository;
-    private final BigDecimal PRICE_PER_PAGE_A3 = BigDecimal.valueOf(0.30);
-    private final BigDecimal PRICE_PER_PAGE_A4 = BigDecimal.valueOf(0.15);
-    private final BigDecimal PRICE_PER_PAGE_A5 = BigDecimal.valueOf(0.10);
-    private final BigDecimal COLOR_PAGE_MULTIPLIER = BigDecimal.valueOf(4);
+    private final ServicePriceService servicePriceService;
     private final GoogleCloudStorageService googleCloudStorageService;
 
-    public OrderService(OrderRepository orderRepository, ApplicationEventPublisher eventPublisher, MailService mailService, ModelMapper modelMapper, UserRepository userRepository, GoogleCloudStorageService googleCloudStorageService) {
+    public OrderService(OrderRepository orderRepository, ApplicationEventPublisher eventPublisher,
+                        MailService mailService, ModelMapper modelMapper, UserRepository userRepository,
+                        ServicePriceService servicePriceService, GoogleCloudStorageService googleCloudStorageService) {
         this.orderRepository = orderRepository;
         this.eventPublisher = eventPublisher;
         this.mailService = mailService;
         this.modelMapper = modelMapper;
         this.userRepository = userRepository;
+        this.servicePriceService = servicePriceService;
         this.googleCloudStorageService = googleCloudStorageService;
     }
 
     public OrderResultDTO createOrder(OrderCreationDTO orderCreationDTO, Principal principal) {
         Optional<UserEntity> user = userRepository.findByEmail(principal.getName());
         if (user.isEmpty()) {
-            return new OrderResultDTO(-1L,BigDecimal.ZERO,404, "User not found");
+            return new OrderResultDTO(-1L,BigDecimal.ZERO, null, 404, "User not found");
         }
         if (orderCreationDTO.getDeadline() == null) {
-            return new OrderResultDTO(-1L,BigDecimal.ZERO,401, "Deadline not set");
+            return new OrderResultDTO(-1L,BigDecimal.ZERO, null, 401, "Deadline not set");
         }
 
         int numberOfPages = orderCreationDTO.getTotalPages();
@@ -61,23 +61,16 @@ public class OrderService {
         int copies = orderCreationDTO.getCopies();
 
         if (colorfulPages + grayscalePages != numberOfPages) {
-            return new OrderResultDTO(-1L,BigDecimal.ZERO,400, "Invalid page count: sum of colorful and grayscale pages must equal total pages");
+            return new OrderResultDTO(-1L,BigDecimal.ZERO, null, 400, "Invalid page count: sum of colorful and grayscale pages must equal total pages");
         }
 
         OrderEntity orderEntity = modelMapper.map(orderCreationDTO, OrderEntity.class);
         orderEntity.setOwner(user.get());
         orderEntity.setStatus(OrderStatus.UNPAID);
 
-        BigDecimal price = calculatePrice(
-                colorfulPages,
-                grayscalePages,
-                copies,
-                orderCreationDTO.getPageSize(),
-                orderCreationDTO.getPaperType(),
-                orderCreationDTO.getDeadline()
-        );
+        Pair<BigDecimal, String> price = servicePriceService.calculateOrderPrice(orderCreationDTO, copies, user);
 
-        orderEntity.setPrice(price);
+        orderEntity.setPrice(price.getLeft());
 
         //calc deadline
         LocalDateTime deadline = switch (orderCreationDTO.getDeadline()) {
@@ -91,55 +84,12 @@ public class OrderService {
 
         orderRepository.save(orderEntity);
 
-        return new OrderResultDTO(orderEntity.getId(),orderEntity.getPrice(),200, String.format(
-                "Order created successfully. Total price: %.2f BGN", price));
-    }
-
-    private BigDecimal calculatePrice(int colorfulPages, int grayscalePages,
-                                      int copies,
-                                      PageSize pageSize, PaperType paperType, DeadlineEnum deadlineEnum) {
-
-        BigDecimal multiplierNumberOfCopies = determineCopiesMultiplier(copies*grayscalePages);
-
-        BigDecimal basePricePerPage = switch (pageSize) {
-            case A3 -> PRICE_PER_PAGE_A3;
-            case A4 -> PRICE_PER_PAGE_A4;
-            case A5 -> PRICE_PER_PAGE_A5;
-        };
-
-        BigDecimal multiplierPaperType = switch (paperType){
-            case REGULAR_MATE -> BigDecimal.ONE;
-            case GLOSSY -> BigDecimal.valueOf(2);
-            case BRIGHT_WHITE -> BigDecimal.valueOf(1.5);
-            case PHOTO -> BigDecimal.valueOf(12);
-            case HEAVYWEIGHT -> BigDecimal.valueOf(2.5);
-        };
-
-        BigDecimal priceForGrayscalePages = basePricePerPage
-                .multiply(multiplierNumberOfCopies)
-                .multiply(multiplierPaperType)
-                .multiply(BigDecimal.valueOf(grayscalePages));
-
-        BigDecimal priceForColorfulPages = basePricePerPage
-                .multiply(COLOR_PAGE_MULTIPLIER)
-                .multiply(multiplierPaperType)
-                .multiply(BigDecimal.valueOf(colorfulPages));
-
-        BigDecimal pricePerDocument = priceForColorfulPages.add(priceForGrayscalePages);
-
-        BigDecimal totalPrice = pricePerDocument.multiply(BigDecimal.valueOf(copies));
-        switch (deadlineEnum) {
-            case ONE_HOUR -> {
-                totalPrice = totalPrice.multiply(BigDecimal.valueOf(1.2));
-            }
-            case ONE_DAY -> {
-                totalPrice = totalPrice.multiply(BigDecimal.valueOf(1.1));
-            }
-            case ONE_WEEK -> {
-                totalPrice = totalPrice.multiply(BigDecimal.valueOf(0.9));
-            }
-        }
-        return totalPrice;
+        return new OrderResultDTO(
+                orderEntity.getId(),
+                orderEntity.getPrice(),
+                price.getRight(),
+                200,
+                String.format("Order created successfully. Total price: %.2f BGN", price.getLeft()));
     }
 
     //for grayscale pages
@@ -148,6 +98,8 @@ public class OrderService {
         if (allGrayscalePages >= 21) return BigDecimal.valueOf(0.9);  // 10% discount for 21-100 pages
         return BigDecimal.ONE;                             // No discount for 1-20 pages
     }
+
+    //  TODO: Implement other colors deiscounts
 
     public Page<OrderDTO> getOrders(SortBy sortBy, Pageable pageable) {
         //order by deadline
