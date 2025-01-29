@@ -12,7 +12,7 @@ const ServicesPanel = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
 
-    if (!hasAnyRole(["ADMIN", "EMPLOYEE"])) {
+    if (!hasAnyRole(["ADMIN"])) {
         navigate("/unauthorize");
     }
 
