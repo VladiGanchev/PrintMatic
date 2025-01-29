@@ -37,6 +37,9 @@ class ServicePriceServiceTest {
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private DiscountService discountService;
+
     private OrderCreationDTO createOrderCreationDTO() {
         return new OrderCreationDTO("Test title", 1, false, PageSize.A4, PaperType.REGULAR_MATE,
                 "Test additional info", DeadlineEnum.THREE_DAYS, "test_file.url", 10, 5, 5);
@@ -161,15 +164,17 @@ class ServicePriceServiceTest {
 
     @Test
     void calculateOrderPrice_MissingServices() {
+        UserEntity user = new UserEntity();
         OrderCreationDTO order = createOrderCreationDTO();
 
         when(servicePriceRepository.findAll()).thenReturn(List.of());
 
-        assertThrows(EntityNotFoundException.class, () -> servicePriceService.calculateOrderPrice(order, 2));
+        assertThrows(EntityNotFoundException.class, () -> servicePriceService.calculateOrderPrice(order, 2, Optional.of(user)));
     }
 
     @Test
     void calculateOrderPrice_ZeroPages() {
+        UserEntity user = new UserEntity();
         OrderCreationDTO order = createOrderCreationDTO();
         order.setTotalPages(0);
         order.setGrayscalePages(0);
@@ -181,8 +186,9 @@ class ServicePriceServiceTest {
         ServicePriceEntity deadlineMultiplier = new ServicePriceEntity(5L, ServiceEnum.THREE_DAYS, PriceType.MULTIPLIER, 1.2);
 
         when(servicePriceRepository.findAll()).thenReturn(List.of(pagePrice, grayscaleMultiplier, colorMultiplier, paperMultiplier, deadlineMultiplier));
+        when(discountService.calculateFinalPrice(any(), any(), any(), any())).thenReturn(Pair.of(BigDecimal.ZERO, List.of("")));
 
-        Pair<BigDecimal, String> result = servicePriceService.calculateOrderPrice(order, 2);
+        Pair<BigDecimal, String> result = servicePriceService.calculateOrderPrice(order, 2, Optional.of(user));
 
         assertEquals(BigDecimal.ZERO, result.getLeft().stripTrailingZeros());
         assertNotNull(result.getRight());
@@ -190,6 +196,7 @@ class ServicePriceServiceTest {
 
     @Test
     void calculateOrderPrice_Success() {
+        UserEntity user = new UserEntity();
         OrderCreationDTO order = createOrderCreationDTO();
         ServicePriceEntity pagePrice = new ServicePriceEntity(1L, ServiceEnum.A4, PriceType.VALUE, 0.15);
         ServicePriceEntity grayscaleMultiplier = new ServicePriceEntity(2L, ServiceEnum.GRAYSCALE, PriceType.MULTIPLIER, 1.0);
@@ -198,8 +205,9 @@ class ServicePriceServiceTest {
         ServicePriceEntity deadlineMultiplier = new ServicePriceEntity(5L, ServiceEnum.THREE_DAYS, PriceType.MULTIPLIER, 1.2);
 
         when(servicePriceRepository.findAll()).thenReturn(List.of(pagePrice, grayscaleMultiplier, colorMultiplier, paperMultiplier, deadlineMultiplier));
+        when(discountService.calculateFinalPrice(any(), any(), any(), any())).thenReturn(Pair.of(BigDecimal.ONE, List.of("")));
 
-        Pair<BigDecimal, String> result = servicePriceService.calculateOrderPrice(order, 2);
+        Pair<BigDecimal, String> result = servicePriceService.calculateOrderPrice(order, 2, Optional.of(user));
 
         assertNotNull(result);
         assertTrue(result.getLeft().compareTo(BigDecimal.ZERO) > 0);

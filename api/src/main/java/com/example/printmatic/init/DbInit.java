@@ -23,6 +23,5 @@ public class DbInit implements CommandLineRunner {
         userService.seedUsers();
         servicePriceService.seedServices();
         dbInitDiscounts.seedDiscounts();
-
     }
 }

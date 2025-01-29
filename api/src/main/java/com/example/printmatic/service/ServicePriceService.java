@@ -109,23 +109,18 @@ public class ServicePriceService {
             ServicePriceEntity brightWhite = new ServicePriceEntity(null, ServiceEnum.BRIGHT_WHITE, PriceType.MULTIPLIER, 1.5);
             ServicePriceEntity photo = new ServicePriceEntity(null, ServiceEnum.PHOTO, PriceType.MULTIPLIER, 12.0);
             ServicePriceEntity heavyweight = new ServicePriceEntity(null, ServiceEnum.HEAVYWEIGHT, PriceType.MULTIPLIER, 2.5);
-           /* ServicePriceEntity oneHour = new ServicePriceEntity(null, ServiceEnum.ONE_HOUR, PriceType.MULTIPLIER, 1.2);
-            ServicePriceEntity oneDay = new ServicePriceEntity(null, ServiceEnum.ONE_DAY, PriceType.MULTIPLIER, 1.1);
-            ServicePriceEntity threeDays = new ServicePriceEntity(null, ServiceEnum.THREE_DAYS, PriceType.MULTIPLIER, 1.0);
-            ServicePriceEntity oneWeek = new ServicePriceEntity(null, ServiceEnum.ONE_WEEK, PriceType.MULTIPLIER, 0.9);
-*/
+
             // Add service to DB
             servicePriceRepository.saveAll(List.of(A3, A4, A5));
             servicePriceRepository.saveAll(List.of(grayscale, color));
             servicePriceRepository.saveAll(List.of(regularMatte, glossy, brightWhite, photo, heavyweight));
-           // servicePriceRepository.saveAll(List.of(oneHour, oneDay, threeDays, oneWeek));
         }
     }
 
     public String generateCalculatedFormulaForPrice(
             OrderCreationDTO order, BigDecimal pricePerPage, Integer numberOfGrayscalePages,
             BigDecimal grayscaleMultiplier, Integer numberOfColorPages, BigDecimal colorMultiplier,
-            BigDecimal paperTypeMultiplier, BigDecimal deadlineMultiplier, Integer copies,
+            BigDecimal paperTypeMultiplier, Integer copies,
             List<String> appliedDiscounts, BigDecimal basePrice, BigDecimal finalPrice) {
         // Write total price formula
         // grayscalePagesPrice = pricePerPage * numberOfGrayscalePages * grayscaleMultiplier
@@ -134,18 +129,16 @@ public class ServicePriceService {
 
         String pageSizeInBulgarian = ServiceEnum.valueOf(order.getPageSize().name()).bulgarianName();
         String paperTypeInBulgarian = ServiceEnum.valueOf(order.getPaperType().name()).bulgarianName();
-        String deadlineInBulgarian = ServiceEnum.valueOf(order.getDeadline().name()).bulgarianName();
         StringBuilder formula = new StringBuilder(String.format(
                 """
                         (Цена на %s страница * Брой черно-бели страници * Надценка за черно-бели страници
                         + Цена на %s страница * Брой цветни страници * Надценка за цветни страници)
-                        * Надценка за тип хартия - %s * Надценка за срок - %s * Брой копия
-                        (%.0f ст. * %d * %.2f + %.0f ст. * %d * %.2f) * %.2f * %.2f * %d = %.2f лв.""",
-                pageSizeInBulgarian, pageSizeInBulgarian,
-                paperTypeInBulgarian, deadlineInBulgarian,
+                        * Надценка за тип хартия - %s * Брой копия
+                        (%.0f ст. * %d * %.2f + %.0f ст. * %d * %.2f) * %.2f * %d = %.2f лв.""",
+                pageSizeInBulgarian, pageSizeInBulgarian, paperTypeInBulgarian,
                 toCents(pricePerPage), numberOfGrayscalePages, grayscaleMultiplier,
                 toCents(pricePerPage), numberOfColorPages, colorMultiplier,
-                paperTypeMultiplier, deadlineMultiplier, copies, basePrice));
+                paperTypeMultiplier, copies, basePrice));
 
         // check if a discount was applied
         if (basePrice.compareTo(finalPrice) != 0) {
@@ -176,7 +169,6 @@ public class ServicePriceService {
         BigDecimal grayscaleMultiplier = getMultiplierForPageColor(servicePriceEntities, PageColor.GRAYSCALE);
         BigDecimal colorMultiplier = getMultiplierForPageColor(servicePriceEntities, PageColor.COLOR);
         BigDecimal paperTypeMultiplier = getMultiplierForPaperType(servicePriceEntities, order.getPaperType());
-        BigDecimal deadlineMultiplier = getMultiplierForDeadline(servicePriceEntities, order.getDeadline());
 
         // Calculate prices for different page types
         BigDecimal grayscalePagesPrice = pricePerPage
@@ -190,7 +182,6 @@ public class ServicePriceService {
         // Calculate base price before discounts
         BigDecimal basePrice = allPagesPrice
                 .multiply(paperTypeMultiplier)
-                .multiply(deadlineMultiplier)
                 .multiply(BigDecimal.valueOf(copies));
 
         // Apply discounts if user is present
@@ -208,7 +199,7 @@ public class ServicePriceService {
         String finalPriceFormula = generateCalculatedFormulaForPrice(
                 order, pricePerPage, order.getGrayscalePages(), grayscaleMultiplier,
                 order.getColorfulPages(), colorMultiplier, paperTypeMultiplier,
-                deadlineMultiplier, copies, appliedDiscounts, basePrice, finalPrice);
+                copies, appliedDiscounts, basePrice, finalPrice);
 
         return Pair.of(finalPrice, finalPriceFormula);
     }
@@ -230,13 +221,6 @@ public class ServicePriceService {
     private BigDecimal getMultiplierForPaperType(List<ServicePriceEntity> servicePriceEntities, PaperType paperType) {
         // Find paper type service
         ServicePriceEntity service = findServiceThatEqualsTo(servicePriceEntities, paperType.name());
-        // Determine multiplier
-        return BigDecimal.valueOf(service.getServicePrice());
-    }
-
-    private BigDecimal getMultiplierForDeadline(List<ServicePriceEntity> servicePriceEntities, DeadlineEnum deadline) {
-        // Find deadline service
-        ServicePriceEntity service = findServiceThatEqualsTo(servicePriceEntities, deadline.name());
         // Determine multiplier
         return BigDecimal.valueOf(service.getServicePrice());
     }

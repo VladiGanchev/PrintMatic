@@ -100,7 +100,7 @@ class OrderServiceTest {
     void createOrder_Success() {
         when(principal.getName()).thenReturn("test@example.com");
         when(userRepository.findByEmail(anyString())).thenReturn(Optional.of(testUser));
-        when(servicePriceService.calculateOrderPrice(any(), any())).thenReturn(Pair.of(BigDecimal.ZERO, ""));
+        when(servicePriceService.calculateOrderPrice(any(), any(), any())).thenReturn(Pair.of(BigDecimal.ZERO, ""));
         when(orderRepository.save(any(OrderEntity.class))).thenReturn(testOrder);
 
         OrderResultDTO result = orderService.createOrder(testOrderCreationDTO, principal);
