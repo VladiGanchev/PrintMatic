@@ -4,12 +4,10 @@ import com.example.printmatic.filter.AuthFilter;
 import lombok.AllArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -18,7 +16,6 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import java.util.List;
 
@@ -41,9 +38,10 @@ public class SecurityConfiguration {
                                 "/api/user/register",
                                 "/api/user/login"
                         ).permitAll()
-                        .requestMatchers("/api/storage/download/**").hasAnyAuthority("EMPLOYEE","ADMIN")
+                        .requestMatchers("/api/storage/download/**").hasAnyAuthority("EMPLOYEE", "ADMIN")
                         //.requestMatchers("/api/order/getAll").hasAnyAuthority("EMPLOYEE","ADMIN")
                         .requestMatchers("/api/storage/upload").authenticated()
+                        .requestMatchers("/api/**").authenticated()
                         .anyRequest().authenticated()
         );
         http.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));

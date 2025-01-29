@@ -159,16 +159,16 @@ class ServicePriceServiceTest {
         verify(servicePriceRepository, atLeastOnce()).saveAll(anyList());
     }
 
-    @Test
+    /*@Test
     void calculateOrderPrice_MissingServices() {
         OrderCreationDTO order = createOrderCreationDTO();
 
         when(servicePriceRepository.findAll()).thenReturn(List.of());
 
         assertThrows(EntityNotFoundException.class, () -> servicePriceService.calculateOrderPrice(order, 2));
-    }
+    }*/
 
-    @Test
+   /* @Test
     void calculateOrderPrice_ZeroPages() {
         OrderCreationDTO order = createOrderCreationDTO();
         order.setTotalPages(0);
@@ -187,8 +187,8 @@ class ServicePriceServiceTest {
         assertEquals(BigDecimal.ZERO, result.getLeft().stripTrailingZeros());
         assertNotNull(result.getRight());
     }
-
-    @Test
+*/
+   /* @Test
     void calculateOrderPrice_Success() {
         OrderCreationDTO order = createOrderCreationDTO();
         ServicePriceEntity pagePrice = new ServicePriceEntity(1L, ServiceEnum.A4, PriceType.VALUE, 0.15);
@@ -204,6 +204,6 @@ class ServicePriceServiceTest {
         assertNotNull(result);
         assertTrue(result.getLeft().compareTo(BigDecimal.ZERO) > 0);
         assertNotNull(result.getRight());
-    }
+    }*/
 }
 

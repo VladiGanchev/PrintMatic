@@ -1,11 +1,18 @@
 package com.example.printmatic.service;
 
+import aj.org.objectweb.asm.commons.Remapper;
+import com.example.printmatic.dto.DiscountDTO;
+import com.example.printmatic.dto.DiscountUpdateDTO;
+import com.example.printmatic.dto.request.DiscountCreationDTO;
+import com.example.printmatic.dto.response.DiscountListResponseDTO;
+import com.example.printmatic.dto.response.MessageResponseDTO;
 import com.example.printmatic.enums.DeadlineEnum;
 import com.example.printmatic.enums.RoleEnum;
 import com.example.printmatic.model.DiscountEntity;
 import com.example.printmatic.model.OrderEntity;
 import com.example.printmatic.model.UserEntity;
 import com.example.printmatic.repository.DiscountRepository;
+import com.example.printmatic.repository.UserRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.stereotype.Service;
@@ -13,20 +20,26 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.security.Principal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import org.modelmapper.ModelMapper;
 
 @Slf4j
 @Service
 public class DiscountService {
 
     private final DiscountRepository discountRepository;
-
-    public DiscountService(DiscountRepository discountRepository) {
+    private final ModelMapper modelMapper;
+    private final UserRepository userRepository;
+    public DiscountService(DiscountRepository discountRepository, ModelMapper modelMapper, UserRepository userRepository) {
         this.discountRepository = discountRepository;
+        this.modelMapper = modelMapper;
+        this.userRepository = userRepository;
     }
 
     /**
@@ -134,10 +147,45 @@ public class DiscountService {
         }
         return RoleEnum.USER;
     }
-
+    /// Designed for api methods
     /**
      * Add a new discount
      */
+
+    public DiscountListResponseDTO getAllDiscountsDTO(Principal principal) {
+        // Verify user exists
+        Optional<UserEntity> user = userRepository.findByEmail(principal.getName());
+        if (user.isEmpty()) {
+            return new DiscountListResponseDTO(null, 404, "User not found");
+        }
+
+        List<DiscountEntity> discounts = getAllActiveDiscounts();
+        List<DiscountDTO> discountDTOs = discounts.stream()
+                .map(discount -> modelMapper.map(discount, DiscountDTO.class))
+                .collect(Collectors.toList());
+        return new DiscountListResponseDTO(discountDTOs, 200, "Discounts fetched successfully");
+    }
+    @Transactional
+    public MessageResponseDTO createDiscount(DiscountCreationDTO discountDTO, Principal principal) {
+        Optional<UserEntity> user = userRepository.findByEmail(principal.getName());
+        if (user.isEmpty()) {
+            return new MessageResponseDTO(404, "User not found");
+        }
+
+        try {
+            if (discountRepository.existsByNameIgnoreCase(discountDTO.getName())) {
+                return new MessageResponseDTO(400, "Discount with this name already exists");
+            }
+
+            DiscountEntity discount = modelMapper.map(discountDTO, DiscountEntity.class);
+            validateDiscount(discount);
+            discountRepository.save(discount);
+            return new MessageResponseDTO(200, "Discount created successfully");
+        } catch (IllegalArgumentException e) {
+            return new MessageResponseDTO(400, e.getMessage());
+        }
+    }
+
     @Transactional
     public DiscountEntity addDiscount(DiscountEntity discount) {
         if (discountRepository.existsByNameIgnoreCase(discount.getName())) {
@@ -152,20 +200,43 @@ public class DiscountService {
      * Update an existing discount
      */
     @Transactional
-    public DiscountEntity updateDiscount(Long id, DiscountEntity updatedDiscount) {
-        DiscountEntity existingDiscount = discountRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Discount not found"));
-
-        // Check name uniqueness only if it's changed
-        if (!existingDiscount.getName().equalsIgnoreCase(updatedDiscount.getName()) &&
-                discountRepository.existsByNameIgnoreCase(updatedDiscount.getName())) {
-            throw new IllegalArgumentException("Discount with this name already exists");
+    public MessageResponseDTO updateDiscountDTO(Long id, DiscountUpdateDTO updateDTO, Principal principal) {
+        Optional<UserEntity> user = userRepository.findByEmail(principal.getName());
+        if (user.isEmpty()) {
+            return new MessageResponseDTO(404, "User not found");
         }
 
-        validateDiscount(updatedDiscount);
-        updatedDiscount.setId(id);
-        return discountRepository.save(updatedDiscount);
+        try {
+            DiscountEntity existingDiscount = discountRepository.findById(id)
+                    .orElseThrow(() -> new IllegalArgumentException("Discount not found"));
+
+            existingDiscount.setValue(updateDTO.getValue());
+            existingDiscount.setPriority(updateDTO.getPriority());
+            existingDiscount.setDescription(updateDTO.getDescription());
+
+            validateDiscount(existingDiscount);
+            discountRepository.save(existingDiscount);
+            return new MessageResponseDTO(200, "Discount updated successfully");
+        } catch (IllegalArgumentException e) {
+            return new MessageResponseDTO(400, e.getMessage());
+        }
     }
+
+    @Transactional
+    public MessageResponseDTO deactivateDiscountWithResponse(Long id, Principal principal) {
+        Optional<UserEntity> user = userRepository.findByEmail(principal.getName());
+        if (user.isEmpty()) {
+            return new MessageResponseDTO(404, "User not found");
+        }
+
+        try {
+            deactivateDiscount(id);
+            return new MessageResponseDTO(200, "Discount deactivated successfully");
+        } catch (IllegalArgumentException e) {
+            return new MessageResponseDTO(400, e.getMessage());
+        }
+    }
+
 
     /**
      * Validate discount entity

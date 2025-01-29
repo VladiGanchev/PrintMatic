@@ -15,6 +15,7 @@ import EmployeeScreen from "./pages/employeePanel";
 import AdminPanel from "./pages/adminPanel";
 import ServicesPanel from "./pages/servicesPanel";
 import UnauthorizedPage from "./pages/UnauthorizedPage";
+import DiscountsPanel from "./pages/discountPanel";
 import { AuthProvider } from "./context/AuthContext";
 
 function App() {
@@ -35,6 +36,7 @@ function App() {
         <Route path="/employeePanel" element={<EmployeeScreen />} />
         <Route path="/adminPanel" element={<AdminPanel />} />
         <Route path="/admin/services" element={<ServicesPanel />} />
+        <Route path="/admin/discounts" element={<DiscountsPanel />} />
         <Route path="/unauthorize" element={<UnauthorizedPage />}/>
 
         <Route path="*" element={<h1>404 Not Found</h1>} />

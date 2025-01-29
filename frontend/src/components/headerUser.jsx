@@ -76,6 +76,17 @@ export default function HeaderUser() {
               </div>
           )
           }
+           
+
+          {hasRole('ADMIN') && (
+              <div className="flex flex-row gap-2 items-center">
+                <FaUserCog className="text-white w-4 h-4" />
+                <a className="text-white hover:underline" href="/admin/discounts">
+                  Панел с намаления
+                </a>
+              </div>
+          )
+}
 
         </div>
 
